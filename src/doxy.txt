@@ -1,0 +1,7 @@
+/**
+  @mainpage Reformulated vortex particle method
+
+  @defgroup vpm Vortex particle distributions
+
+  @defgroup kernels Regularised kernels for velocity evaluations
+*/

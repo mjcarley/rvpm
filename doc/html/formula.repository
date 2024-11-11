@@ -1,0 +1,10 @@
+\_form#0=175x23:$K(\mathbf{x},\mathbf{y}) = -\frac{1}{4\pi}\frac{R^{2}+5\epsilon^{2}/2}{(R^{2}+\epsilon^{2})^{5/2}} (\mathbf{x}-\mathbf{y})$
+\_form#1=5x6:$\epsilon$
+\_form#2=135x19:$K(\mathbf{x},\mathbf{y}) = -\frac{1}{4\pi}\frac{\mathbf{x}-\mathbf{y}}{(R^{2}+\epsilon^{2})^{3/2}}$
+\_form#3=251x23:$K(\mathbf{x},\mathbf{y}) = \left(K_{x}, K_{y}, K_{z}\right) -\frac{1}{4\pi}\frac{R^{2}+5\epsilon^{2}/2}{(R^{2}+\epsilon^{2})^{5/2}} (\mathbf{x}-\mathbf{y})$
+\_form#4=263x23:$K(\mathbf{x},\mathbf{y}) = \left(K_{x}, K_{y}, K_{z}\right) = -\frac{1}{4\pi}\frac{R^{2}+5\epsilon^{2}/2}{(R^{2}+\epsilon^{2})^{5/2}} (\mathbf{x}-\mathbf{y})$
+\_form#5=259x24:$\left( \frac{\partial K_{x}}{\partial x}, \frac{\partial K_{y}}{\partial x}, \frac{\partial K_{z}}{\partial x}, \frac{\partial K_{x}}{\partial y}, \frac{\partial K_{y}}{\partial y}, \frac{\partial K_{z}}{\partial y}, \frac{\partial K_{x}}{\partial z}, \frac{\partial K_{y}}{\partial z}, \frac{\partial K_{z}}{\partial z} \right)$
+\_form#6=221x19:$K(\mathbf{x},\mathbf{y}) = \left(K_{x}, K_{y}, K_{z}\right) = -\frac{1}{4\pi}\frac{\mathbf{x}-\mathbf{y}}{(R^{2}+\epsilon^{2})^{3/2}}$
+\_form#7=8x6:$\sigma$
+\_form#8=235x21:$K(\mathbf{x},\mathbf{y}) = \left(K_{x}, K_{y}, K_{z}\right) = -\frac{g(R/\sigma)}{4\pi} \frac{\mathbf{x}-\mathbf{y}}{|\mathbf{x}-\mathbf{y}|)^{3/2}}$
+\_form#9=255x15:$G(R/\sigma=\mathrm{erf}(R/\sigma) - 2/\sqrt{pi}(R/\sigma)\exp[-R^{2}/\sigma^{2}]$

@@ -1,0 +1,30 @@
+/* This file is part of RVPM, a library for the Reformulated Vortex
+ * Particle Method of Alvarez and Ning (see README.md and
+ * documentation for references)
+ *
+ * Copyright (C) 2024 Michael Carley
+ *
+ * RVPM is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version. RVPM is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ * PURPOSE.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with RVPM.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: rvpm
+Description: Library and tools for reformulated vortex particle method
+Version: @RVPM_VERSION@
+Requires: glib-2.0
+##gthread-2.0
+Libs: -L${libdir} -lrvpm
+Cflags: -I${includedir}
