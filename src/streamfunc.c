@@ -102,7 +102,7 @@ static void quad_limit_z(rvpm_stream_func_vorticity_t func,
 
 {
   gint i, j ;
-  RVPM_REAL dth, thbar, s, s1, ds, sbar, th, w, K, Kr, Kz ;
+  RVPM_REAL dth, thbar, s, s1, ds, sbar, th, w ;
   RVPM_REAL r1, z1, G, Gr, Gz ;
 
   /* fprintf(stderr, "%lg %lg\n", K, Kr) ; */

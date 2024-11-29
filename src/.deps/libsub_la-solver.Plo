@@ -130,7 +130,8 @@ libsub_la-solver.lo: solver.c /usr/include/stdc-predef.h ../config.h \
  /usr/include/bits/types/struct_sched_param.h /usr/include/bits/cpu-set.h \
  /usr/include/bits/setjmp.h \
  /usr/include/bits/types/struct___jmp_buf_tag.h \
- /usr/include/glib-2.0/glib/glib-autocleanups.h rvpm.h \
+ /usr/include/glib-2.0/glib/glib-autocleanups.h \
+ /home/michael/Codes/include/blaswrap.h rvpm.h \
  /home/michael/Codes/include/gqr.h /home/michael/Codes/include/wbfmm.h \
  rvpm-private.h
 /usr/include/stdc-predef.h:
@@ -332,6 +333,7 @@ libsub_la-solver.lo: solver.c /usr/include/stdc-predef.h ../config.h \
 /usr/include/bits/setjmp.h:
 /usr/include/bits/types/struct___jmp_buf_tag.h:
 /usr/include/glib-2.0/glib/glib-autocleanups.h:
+/home/michael/Codes/include/blaswrap.h:
 rvpm.h:
 /home/michael/Codes/include/gqr.h:
 /home/michael/Codes/include/wbfmm.h:

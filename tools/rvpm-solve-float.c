@@ -70,7 +70,7 @@ gint main(gint argc, char **argv)
   rvpm_distribution_t *d ;
   rvpm_tree_t *tree ;
   rvpm_solver_t solver ;
-  gfloat dt, *u, t0, *work, x[3], v[3] ;
+  gfloat dt, *u, t0, *work, x[3], v[3], w[3] ;
   gint ns, i, ustr, order_max, depth, wsize ;
   FILE *input ;
   
@@ -79,13 +79,17 @@ gint main(gint argc, char **argv)
 
   dt = 0.01 ; ns = 10 ; order_max = 10 ; depth = 4 ;
   vfile = NULL ;
+
+  rvpm_solver_kernel(&solver)        = RVPM_KERNEL_GAUSSIAN ;
+  rvpm_solver_time_step(&solver)     = RVPM_TIME_STEP_EULER ;
+  rvpm_solver_method(&solver)        = RVPM_METHOD_CLASSICAL ;
+  rvpm_solver_thread_number(&solver) = 1 ;
+  rvpm_solver_regularisation(&solver)= 1e-6 ;
+  rvpm_solver_model_parameter_f(&solver) = 0.0 ;
+  rvpm_solver_model_parameter_g(&solver) = 1/5.0 ;
   
-  solver.kernel   = RVPM_KERNEL_GAUSSIAN ;
-  solver.step     = RVPM_TIME_STEP_EULER ;
-  solver.method   = RVPM_METHOD_CLASSICAL ;
-  solver.nthreads = 1 ;
-  solver.reg      = 1e-6 ;
-  
+  rvpm_solver_time_step(&solver)     = RVPM_TIME_STEP_WILLIAMSON_4 ;
+
   while ( (ch = getopt(argc, argv, "d:GL:Mn:r:T:v:W")) != EOF ) {
     switch ( ch ) {
     default: g_assert_not_reached() ; break ;
@@ -112,13 +116,26 @@ gint main(gint argc, char **argv)
 
     while ( fscanf(input, "%g %g %g",
 		   &(x[0]), &(x[1]), &(x[2])) != EOF ) {
-      v[0] = v[1] = v[2] = 0 ;
+      v[0] = v[1] = v[2] = 0.0 ;
+      w[0] = w[1] = w[2] = 0.0 ;
+      grbf_gaussian_eval_3d_f((gfloat *)rvpm_distribution_particle(d,0),
+				  RVPM_DISTRIBUTION_PARTICLE_SIZE,
+				  rvpm_distribution_particle_number(d),
+				  (gfloat *)
+				  rvpm_distribution_particle_radius(d,0),
+				  RVPM_DISTRIBUTION_PARTICLE_SIZE,
+				  (gfloat *)rvpm_distribution_vorticity(d,0),
+				  RVPM_DISTRIBUTION_PARTICLE_SIZE,
+				  3, x, w) ;
+
       rvpm_vorticity_velocity_gradient_f(d,
 					     rvpm_solver_regularisation(&solver),
 					     rvpm_solver_kernel(&solver),
 					     x, v, NULL) ;
-      fprintf(stdout, "%1.16e %1.16e %1.16e %1.16e %1.16e %1.16e\n",
-	      x[0], x[1], x[2], v[0], v[1], v[2]) ;
+      fprintf(stdout,
+	      "%1.16e %1.16e %1.16e %1.16e %1.16e %1.16e "
+	      "%1.16e %1.16e %1.16e\n",
+	      x[0], x[1], x[2], w[0], w[1], w[2], v[0], v[1], v[2]) ;
     }
     
     file_close(input) ;
@@ -142,7 +159,7 @@ gint main(gint argc, char **argv)
   for ( i = 0 ; i < ns ; i ++ ) {
     fprintf(stderr, "%s: time step %d [%lg]\n",
 	    progname, i, g_timer_elapsed(timer, NULL)-t0) ;
-    rvpm_solver_solve_f(tree, &solver, dt, u, ustr, work) ;
+    rvpm_solver_solve_f(tree, &solver, i*dt, dt, u, ustr, work) ;
   }
 
   fprintf(stderr, "%s: solve completed [%lg]\n",

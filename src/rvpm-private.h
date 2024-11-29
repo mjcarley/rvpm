@@ -21,6 +21,17 @@
 
 #include <glib.h>
 
+/*indices of velocity gradient terms*/
+#define RVPM_GRADIENT_U_X 0
+#define RVPM_GRADIENT_V_X 1
+#define RVPM_GRADIENT_W_X 2
+#define RVPM_GRADIENT_U_Y 3
+#define RVPM_GRADIENT_V_Y 4
+#define RVPM_GRADIENT_W_Y 5
+#define RVPM_GRADIENT_U_Z 6
+#define RVPM_GRADIENT_V_Z 7
+#define RVPM_GRADIENT_W_Z 8
+
 #ifdef RVPM_SINGLE_PRECISION
 
 #define RVPM_REAL gfloat

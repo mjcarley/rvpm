@@ -68,7 +68,7 @@ static gint parse_test(char *str)
 {
   char *tests[] = {"gauss_fit", "permutation", "tree", "solver",
     "kernel_gradient", "stream_function", "stream_function_velocity",
-    NULL} ;
+    "time_step", NULL} ;
   gint i ;
 
   for ( i = 0 ; tests[i] != NULL ; i ++ ) {
@@ -441,7 +441,7 @@ static void tree_test(rvpm_kernel_t kernel, gint np)
   fprintf(stderr, "setting up FMM tree\n") ;
   tree = rvpm_tree_new_f(d, 4, 16, work) ;
   fprintf(stderr, "updating FMM tree\n") ;
-  rvpm_tree_update_f(tree, 1, work) ;
+  rvpm_tree_update_f(tree, 1, TRUE, work) ;
   
   /*velocity at sample points*/
   for ( i = 0 ; i < 1000 ; i ++ ) {
@@ -611,7 +611,7 @@ static void solver_test(gint np)
   t0 = g_timer_elapsed(timer, NULL) ;
   for ( i = 0 ; i < 200 ; i ++ ) {
     fprintf(stderr, "time %d [%lg]\n", i,  g_timer_elapsed(timer, NULL)-t0) ;
-    rvpm_tree_update_f(tree, nthreads, work) ;
+    rvpm_tree_update_f(tree, nthreads, TRUE, work) ;
     memset(u, 0, ustr*np*sizeof(gfloat)) ;
     rvpm_tree_velocity_self_f(tree, reg, RVPM_KERNEL_WINCKELMANS_LEONARD,
 				  u, ustr, &(u[3]), ustr, work) ;
@@ -821,7 +821,7 @@ static void stream_func(gfloat r, gfloat z,
   lm_r = 4.0*r1/R1/R2/(R1+R2)/(R1+R2)*(r1*r1 - r*r + (z-z1)*(z-z1)) ;
   lm_z = -2.0*lm*(z-z1)/R1/R2 ;
   
-  RVPM_FUNCTION_NAME(rvpm_elliptic_KE)(lm, &K, &E) ;  
+  rvpm_elliptic_KE_f(lm, &K, &E) ;  
 
   dK = E/lm/(1.0-lm*lm) - K/lm ;
   dE = (E - K)/lm ;
@@ -860,6 +860,52 @@ static void stream_function_velocity_test(void)
 	  Gr, gr, fabs(Gr-gr)) ;
   fprintf(stderr, " axial: %g %g (%g)\n",
 	  Gz, gz, fabs(Gz-gz)) ;
+  
+  return ;
+}
+
+static void solver_time_step_test(rvpm_time_step_t s, gfloat h)
+
+{
+  gfloat a[4], b[4], x[2], q[2], t ;
+  gint n, ns, i, j ;
+
+  rvpm_solver_coefficients_f(s, a, b, &n) ;
+
+  t = 0 ; x[0] = x[1] = 0 ; q[0] = q[1] = 0 ;
+  ns = 5 ;
+  
+  for ( i = 0 ; i < ns ; i ++ ) {
+    for ( j = 0 ; j < n ; j ++ ) {
+      q[0] *= a[j] ; q[1] *= a[j] ;
+      q[0] += h*pow(x[1],n-1) ; q[1] += h ;
+      x[0] += b[j]*q[0] ; x[1] += b[j]*q[1] ;
+    }
+    t += h ;
+  }    
+
+  fprintf(stderr, "%g %g %g %g (%g)\n",
+	  t, x[1], x[0], pow(t,n)/(n), fabs(x[0] - pow(t,n)/n)) ;
+  
+  return ;
+}
+
+static void solver_step_test(void)
+
+{
+  gfloat h = 0.1 ;
+  
+  solver_time_step_test(RVPM_TIME_STEP_EULER, h) ;
+  solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_4 , h) ;
+  solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_5 , h) ;
+  solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_6 , h) ;
+  solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_7 , h) ;
+  solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_8 , h) ;
+  /* solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_10, h) ; */
+  /* solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_11, h) ; */
+  solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_12, h) ;
+  solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_13, h) ;
+  solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_14, h) ;
   
   return ;
 }
@@ -938,5 +984,11 @@ gint main(gint argc, char **argv)
     return 0 ;
   }
   
+  if ( test == 7 ) {
+    solver_step_test() ;
+    
+    return 0 ;
+  }
+
   return 0 ;
 }

@@ -156,7 +156,7 @@ rvpm_tree_t *RVPM_FUNCTION_NAME(rvpm_tree_new)(rvpm_distribution_t *d,
 /* } */
 
 gint RVPM_FUNCTION_NAME(rvpm_tree_update)(rvpm_tree_t *t, gint nthreads,
-					  RVPM_REAL *work)
+					  gboolean init_limits, RVPM_REAL *work)
 
 {
   RVPM_REAL xt[3], del, *x, origin[3], D ;
@@ -167,10 +167,15 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_update)(rvpm_tree_t *t, gint nthreads,
   d = t->d ;
   /*find bounding box for particles in d*/
   del = 1e-2 ;
+  if ( !init_limits ) {
+    origin[0] = t->origin[0] ; xt[0] = origin[0] + t->D ;
+    origin[1] = t->origin[1] ; xt[1] = origin[1] + t->D ;
+    origin[2] = t->origin[2] ; xt[2] = origin[2] + t->D ;
+  }
   RVPM_FUNCTION_NAME(wbfmm_points_origin_width)((RVPM_REAL *)rvpm_distribution_particle(d,0),
 						RVPM_DISTRIBUTION_PARTICLE_SIZE,
 						rvpm_distribution_particle_number(d),
-						origin, xt, &D, TRUE) ;
+						origin, xt, &D, init_limits) ;
   origin[0] -= del ; origin[1] -= del ; origin[2] -= del ; D += 2.0*del ;
   t->origin[0] = origin[0] ;
   t->origin[1] = origin[1] ;
@@ -360,25 +365,25 @@ static void box_curl_gradient_correct_GS(wbfmm_tree_t *t,gint i0, gint i1,
   return ;
 }
 
-static void box_curl_correct_sorted(wbfmm_tree_t *t,
-				    gint i0, gint i1,
-				    RVPM_REAL *src, gint sstr,
-				    RVPM_REAL s,
-				    RVPM_REAL *x, RVPM_REAL *f)
+/* static void box_curl_correct_sorted(wbfmm_tree_t *t, */
+/* 				    gint i0, gint i1, */
+/* 				    RVPM_REAL *src, gint sstr, */
+/* 				    RVPM_REAL s, */
+/* 				    RVPM_REAL *x, RVPM_REAL *f) */
 
-{
-  gint idx ;
-  RVPM_REAL *xs, K[3], u[3] ;
+/* { */
+/*   gint idx ; */
+/*   RVPM_REAL *xs, K[3], u[3] ; */
 
-  for ( idx = i0 ; idx < i1 ; idx ++ ) {
-    xs = wbfmm_tree_point_index(t, idx) ;
-    RVPM_FUNCTION_NAME(rvpm_kernel_WL)(x, xs, s, K, NULL) ;
-    rvpm_vector_cross(u,K,&(src[idx*sstr])) ;
-    f[0] += u[0] ; f[1] += u[1] ; f[2] += u[2] ; 
-  }
+/*   for ( idx = i0 ; idx < i1 ; idx ++ ) { */
+/*     xs = wbfmm_tree_point_index(t, idx) ; */
+/*     RVPM_FUNCTION_NAME(rvpm_kernel_WL)(x, xs, s, K, NULL) ; */
+/*     rvpm_vector_cross(u,K,&(src[idx*sstr])) ; */
+/*     f[0] += u[0] ; f[1] += u[1] ; f[2] += u[2] ;  */
+/*   } */
 
-  return ;
-}
+/*   return ; */
+/* } */
 
 gint RVPM_FUNCTION_NAME(rvpm_tree_velocity_gradient)(rvpm_tree_t *t,
 						     RVPM_REAL reg,
@@ -404,11 +409,13 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_velocity_gradient)(rvpm_tree_t *t,
   g_assert(du != NULL) ;
   
   RVPM_FUNCTION_NAME(wbfmm_laplace_box_field)(t->t, t->depth, b,
-					      (RVPM_REAL *)rvpm_distribution_vorticity(d,0),
-			    RVPM_DISTRIBUTION_PARTICLE_SIZE,
-			    NULL, 0,
-			    WBFMM_FIELD_CURL | WBFMM_FIELD_GRADIENT,
-			    FALSE, x, utmp, 1, work) ;
+					      (RVPM_REAL *)
+					      rvpm_distribution_vorticity(d,0),
+					      RVPM_DISTRIBUTION_PARTICLE_SIZE,
+					      NULL, 0,
+					      WBFMM_FIELD_CURL |
+					      WBFMM_FIELD_GRADIENT,
+					      FALSE, x, utmp, 1, work) ;
   u[0] = utmp[0] ; u[1] = utmp[1] ; u[2] = utmp[2] ;
   for ( i = 0 ; i < 9 ; i ++ ) du[i] = utmp[3+i] ;
 
@@ -441,44 +448,6 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_velocity_gradient)(rvpm_tree_t *t,
     correction_func(t->t, box->i, box->i+box->n, src, sstr, sig, sigstr, x,
 		    u, du) ;
   }
-  /* if ( kernel == RVPM_KERNEL_WINCKELMANS_LEONARD ) { */
-  /*   if ( t->t->sorted ) { */
-  /*     g_assert_not_reached() ; */
-  /*     for ( i = 0 ; i < nnbr ; i ++ ) { */
-  /* 	box = &(boxes[neighbours[i]]) ; */
-  /* 	box_curl_correct_sorted(t->t, box->i, box->i+box->n, src, sstr, */
-  /* 				reg, x, u) ; */
-  /*     } */
-  /*   } else { */
-  /*     for ( i = 0 ; i < nnbr ; i ++ ) { */
-  /* 	box = &(boxes[neighbours[i]]) ; */
-  /* 	box_curl_gradient_correct_WL(t->t, box->i, box->i+box->n, */
-  /* 				     src, sstr, reg, x, u, du) ; */
-  /*     } */
-  /*   } */
-
-  /*   return 0 ; */
-  /* } */
-
-  /* if ( kernel == RVPM_KERNEL_MOORE_ROSENHEAD ) { */
-  /*   if ( t->t->sorted ) { */
-  /*     g_assert_not_reached() ; */
-  /*     for ( i = 0 ; i < nnbr ; i ++ ) { */
-  /* 	box = &(boxes[neighbours[i]]) ; */
-  /* 	box_curl_correct_sorted(t->t, box->i, box->i+box->n, src, sstr, */
-  /* 				reg, x, u) ; */
-  /*     } */
-  /*   } else { */
-  /*     for ( i = 0 ; i < nnbr ; i ++ ) { */
-  /* 	box = &(boxes[neighbours[i]]) ; */
-  /* 	box_curl_gradient_correct_MR(t->t, box->i, box->i+box->n, */
-  /* 				     src, sstr, reg, x, u, du) ; */
-  /*     } */
-  /*   } */
-
-  /*   return 0 ; */
-  /* } */
-  
   return 0 ;
 }
 
@@ -568,6 +537,58 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_velocity_self)(rvpm_tree_t *t, RVPM_REAL reg,
     RVPM_FUNCTION_NAME(rvpm_tree_velocity_gradient)(t, reg, kernel,
 						    (RVPM_REAL *)rvpm_distribution_particle(t->d,i),
 						    &(u[i*ustr]), &(du[i*dustr]), work) ;
+  }
+
+  return 0 ;
+}
+
+gint RVPM_FUNCTION_NAME(rvpm_tree_derivatives)(rvpm_tree_t *t,
+					       rvpm_solver_t *solver,
+					       RVPM_REAL *du, gint str,
+					       RVPM_REAL al, 
+					       RVPM_REAL *work)
+
+/*
+ * increment du by al*f(x) (compatible with low-storage Runge-Kutta)
+ */
+  
+{
+  gint i ;
+  RVPM_REAL utmp[12], *p, *dG, *G, *s, f, g ;
+  RVPM_REAL dG0[3], *ds, reg, dsigt ;
+  rvpm_kernel_t kernel ;
+  
+  g_assert(str >= RVPM_DISTRIBUTION_PARTICLE_SIZE) ;
+
+  kernel = rvpm_solver_kernel(solver) ;
+
+  f   = rvpm_solver_model_parameter_f(solver) ;
+  g   = rvpm_solver_model_parameter_g(solver) ;
+  reg = rvpm_solver_regularisation(solver) ;
+  
+  for ( i = 0 ; i < rvpm_distribution_particle_number(t->d) ; i ++ ) {
+    p = (RVPM_REAL *)rvpm_distribution_particle(t->d,i) ;
+    s = (RVPM_REAL *)rvpm_distribution_particle_radius(t->d,i) ;
+    RVPM_FUNCTION_NAME(rvpm_tree_velocity_gradient)(t, reg, kernel, p,
+						    &(utmp[0]), &(utmp[3]),
+						    work) ;
+    /*particle velocity*/
+    du[i*str+RVPM_DISTRIBUTION_PARTICLE_X+0] += al*utmp[0] ;
+    du[i*str+RVPM_DISTRIBUTION_PARTICLE_X+1] += al*utmp[1] ;
+    du[i*str+RVPM_DISTRIBUTION_PARTICLE_X+2] += al*utmp[2] ;
+    /*vortex stretching*/
+    G = (RVPM_REAL *)rvpm_distribution_vorticity(t->d,i) ;
+    dG = &(du[i*str+RVPM_DISTRIBUTION_PARTICLE_VORTICITY]) ;
+    ds = &(du[i*str+RVPM_DISTRIBUTION_PARTICLE_RADIUS]) ;
+
+    RVPM_FUNCTION_NAME(rvpm_vorticity_derivatives)(G, *s, f, g,
+						   &(utmp[3]), dG0, &dsigt) ;
+    
+    dG[0] += al*dG0[0] ;
+    dG[1] += al*dG0[1] ;
+    dG[2] += al*dG0[2] ;
+
+    *ds += al*dsigt ;
   }
 
   return 0 ;

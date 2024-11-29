@@ -25,78 +25,164 @@
 
 #include <glib.h>
 
+#include <blaswrap.h>
+
 #include "rvpm.h"
 #include "rvpm-private.h"
 
 extern GTimer *timer ;
 
-static gint time_step_classical_euler(rvpm_tree_t *t,
-				      rvpm_solver_t *s,
-				      RVPM_REAL dt, RVPM_REAL *u, gint ustr,
-				      RVPM_REAL *work)
+static gint time_step(rvpm_tree_t *tree, rvpm_solver_t *s,
+		      RVPM_REAL *a, RVPM_REAL *b, gint nc,
+		      RVPM_REAL t, RVPM_REAL dt,
+		      RVPM_REAL *u, gint ustr,
+		      RVPM_REAL *work)
 
 {
   rvpm_distribution_t *d ;
-  gint np, i ;
-  RVPM_REAL *x, *G, dG[3], *du, reg ;
-  
-  d = t->d ;
-  np = rvpm_distribution_particle_number(d) ;
-  reg = rvpm_solver_regularisation(s) ;
-  
-  memset(u, 0, ustr*np*sizeof(RVPM_REAL)) ;
-  RVPM_FUNCTION_NAME(rvpm_tree_update)(t, rvpm_solver_thread_number(s), work) ;
+  gint np, str, i, j ;
+  RVPM_REAL *x ;
 
+  g_assert(ustr >= RVPM_DISTRIBUTION_PARTICLE_SIZE) ;
+  
+  d = tree->d ;
+  np = rvpm_distribution_particle_number(d) ;
+  
   fprintf(stderr,
 	  "%s: tree dimensions: %lg %lg %lg %lg\n", __FUNCTION__,
-	  t->origin[0], t->origin[1], t->origin[2], t->D) ;
+	  tree->origin[0], tree->origin[1], tree->origin[2], tree->D) ;
 
-  /*velocity and velocity gradient*/
-  RVPM_FUNCTION_NAME(rvpm_tree_velocity_self)(t, reg, rvpm_solver_kernel(s),
-					      u, ustr, &(u[3]), ustr, work) ;
+  for ( j = 0 ; j < nc ; j ++ ) {
+    RVPM_FUNCTION_NAME(rvpm_tree_update)(tree, rvpm_solver_thread_number(s),
+					 TRUE, work) ;
+    for ( i = 0 ; i < RVPM_DISTRIBUTION_PARTICLE_SIZE ; i ++ ) {
+#ifdef RVPM_SINGLE_PRECISION
+      blaswrap_sscal(np, a[j], &(u[i]), ustr) ;
+#else /*RVPM_SINGLE_PRECISION*/
+      blaswrap_dscal(np, a[j], &(u[i]), ustr) ;
+#endif /*RVPM_SINGLE_PRECISION*/
+    }
 
-  /*equation 34 of Alvarez and Ning 2024 (cVPM)*/
-  for ( i = 0 ; i < np ; i ++ ) {
-    x = (RVPM_REAL *)rvpm_distribution_particle(d,i) ;
-    G = (RVPM_REAL *)rvpm_distribution_vorticity(d,i) ;
-    /*dx/dt*/
-    x[0] += u[ustr*i+0]*dt ;
-    x[1] += u[ustr*i+1]*dt ;
-    x[2] += u[ustr*i+2]*dt ;
-    /*convenience pointer for \nabla u*/
-    du = &(u[ustr*i+3]) ;
-    /*d\Gamma/dt = \Gamma_{x}\partial u/\partial x + ...*/
-    dG[0] = G[0]*du[0] + G[1]*du[3] + G[2]*du[6] ;
-    dG[1] = G[0]*du[1] + G[1]*du[4] + G[2]*du[7] ;
-    dG[2] = G[0]*du[2] + G[1]*du[5] + G[2]*du[8] ;
-    G[0] += dG[0]*dt ; 
-    G[1] += dG[1]*dt ; 
-    G[2] += dG[2]*dt ; 
+    /*call out to auxiliary velocity and gradient calculation goes
+      here*/
+    RVPM_FUNCTION_NAME(rvpm_tree_derivatives)(tree, s, u, ustr, dt, work) ;
+      
+    x = (RVPM_REAL *)rvpm_distribution_particle(d,0) ;
+    str = RVPM_DISTRIBUTION_PARTICLE_SIZE ;
+    for ( i = 0 ; i < RVPM_DISTRIBUTION_PARTICLE_SIZE ; i ++ ) {
+#ifdef RVPM_SINGLE_PRECISION
+      blaswrap_saxpy(np, b[j], &(u[i]), ustr, &(x[i]), str) ;
+#else /*RVPM_SINGLE_PRECISION*/
+      blaswrap_daxpy(np, b[j], &(u[i]), ustr, &(x[i]), str) ;
+#endif /*RVPM_SINGLE_PRECISION*/
+    }
+
+    /*update time with dt/dt = 1*/
+    t += b[j]*(a[j]*t + dt*1.0) ;
   }
-
+    
   return 0 ;
 }
 
-gint RVPM_FUNCTION_NAME(rvpm_solver_solve)(rvpm_tree_t *t, rvpm_solver_t *s,
-					   RVPM_REAL dt,
+gint RVPM_FUNCTION_NAME(rvpm_solver_solve)(rvpm_tree_t *tree,
+					   rvpm_solver_t *s,
+					   RVPM_REAL t, RVPM_REAL dt,
 					   RVPM_REAL *u, gint ustr,
 					   RVPM_REAL *work)
 
 {
-  if ( ustr < 12 ) {
-    g_error("%s: velocity stride (%d) must be at least 12",
-	    __FUNCTION__, ustr) ;
+  RVPM_REAL a[4], b[4] ;
+  gint nc ;
+
+  RVPM_FUNCTION_NAME(rvpm_solver_coefficients)(rvpm_solver_time_step(s),
+					       a, b, &nc) ;
+  if ( ustr < RVPM_DISTRIBUTION_PARTICLE_SIZE) {
+    g_error("%s: derivative buffer stride (%d) must be at least %d",
+	    __FUNCTION__, ustr, RVPM_DISTRIBUTION_PARTICLE_SIZE) ;
   }
 
-  if ( rvpm_solver_method(s) == RVPM_METHOD_CLASSICAL ) {
-    if ( rvpm_solver_time_step(s) == RVPM_TIME_STEP_EULER ) {
-      time_step_classical_euler(t, s, dt, u, ustr, work) ;
+  time_step(tree, s, a, b, nc, t, dt, u, ustr, work) ;
+  
+  return 0 ;
+}
 
-      return 0 ;
-    }
+gint RVPM_FUNCTION_NAME(rvpm_solver_coefficients)(rvpm_time_step_t s,
+						  RVPM_REAL *a,
+						  RVPM_REAL *b,
+						  gint *n)
+
+{
+  RVPM_REAL al[4], wt[4], bt ;
+  
+  switch ( s ) {
+  default: g_error("%s: unhandled time step %u", __FUNCTION__, s) ;
+  case RVPM_TIME_STEP_EULER:
+    a[0] = 0.0 ; b[0] = 1.0 ; *n = 1 ; return 0 ;
+    break ;
+  case RVPM_TIME_STEP_WILLIAMSON_4:
+    al[1] = 2.0/3.0 ; al[2] = 0.0 ; 
+    bt = -3.0/4.0 ;
+    wt[0] = 7.0/12.0 ; wt[1] = 3.0/4.0 ; wt[2] = -1.0/3.0 ;  
+    *n = 3 ;
+    break ;
+  case RVPM_TIME_STEP_WILLIAMSON_5:
+    al[1] = 1.0/4.0 ; al[2] = 5.0/12.0 ;
+    bt = 2.0/9.0 ;
+    wt[0] = 1.0 ; wt[1] = -3.0 ; wt[2] = 3.0 ;
+    *n = 3 ;
+    break ;
+  case RVPM_TIME_STEP_WILLIAMSON_6:
+    al[1] = 1.0/4.0 ; al[2] = 2.0/3.0 ;
+    bt = 8.0/9.0 ;
+    wt[0] = 1.0/4.0 ; wt[1] = 0.0 ; wt[2] = 3.0/4.0 ;
+    *n = 3 ;
+    break ;
+  case RVPM_TIME_STEP_WILLIAMSON_7:
+    al[1] = 1.0/3.0 ; al[2] = 3.0/4.0 ;
+    bt = 15.0/16.0 ;
+    wt[0] = 1.0/6.0 ; wt[1] = 3.0/10.0 ; wt[2] = 8/15.0 ;
+    *n = 3 ;
+    break ;
+  case RVPM_TIME_STEP_WILLIAMSON_8:
+    al[1] = 3.0/5.0 - SQRT(6.0)/10.0 ;
+    al[2] = 3.0/5.0 + SQRT(6.0)/15.0 ;
+    bt = 2.0/3.0 + SQRT(6.0)/9.0 ;
+    wt[0] = 1.0/6.0 ; wt[1] = 1.0/3.0 ; wt[2] = 1.0/2.0 ;
+    *n = 3 ;
+    break ;
+  case RVPM_TIME_STEP_WILLIAMSON_12:
+    al[1] = 2.0/3.0 ; al[2] = 2.0/3.0 ;
+    bt = 3.0/4.0 ;
+    wt[0] = 1.0/4.0 ; wt[1] = 5.0/12.0 ; wt[2] = 1.0/3.0 ;
+    *n = 3 ;
+    break ;
+  case RVPM_TIME_STEP_WILLIAMSON_13:
+    al[1] = 3.0/5.0 + SQRT(6.0)/10 ;
+    al[2] = 3.0/5.0 - SQRT(6.0)/15 ;
+    bt = 2.0/3.0 - SQRT(6.0)/9.0 ;
+    wt[0] = 1.0/6.0 ; wt[1] = 1.0/3.0 ; wt[2] = 1.0/2.0 ;
+    *n = 3 ;
+    break ;
+  case RVPM_TIME_STEP_WILLIAMSON_14:
+    al[1] = 1.0 ; al[2] = 1.0/3.0 ;
+    bt = 2.0/9.0 ;
+    wt[0] = 0.0 ; wt[1] = 1.0/4.0 ; wt[2] = 3.0/4.0 ;
+    *n = 3 ;
+    break ;
+  }
+
+  if ( *n == 3 ) {
+    b[0] = al[1] ; b[1] = bt ; b[2] = wt[2] ;
+    a[0] = 0.0 ;
+    a[1] = (wt[0] - b[0])/wt[1] ;
+
+    a[2] = (wt[1] - b[1])/wt[2] ;
+
+    return 0 ;
   }
 
   g_assert_not_reached() ;
   
   return 0 ;
 }
+

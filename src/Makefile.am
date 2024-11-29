@@ -29,6 +29,6 @@ libsub_la_SOURCES = \
 	specfunc.c \
 	streamfunc.c
 
-libsub_la_CFLAGS = -DRVPM_SINGLE_PRECISION
+libsub_la_CPPFLAGS = -DRVPM_SINGLE_PRECISION
 
 CLEANFILES = $(BUILT_SOURCES)

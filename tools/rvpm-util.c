@@ -215,15 +215,15 @@ gint main(gint argc, char **argv)
 
   r0 = 0.9 ; z0 = 0.0 ; sigma = 0.1 ; G = 1.0 ;
   
-  while ( (ch = getopt(argc, argv, "M:N:v:")) != EOF ) {
+  while ( (ch = getopt(argc, argv, "d:M:N:v:")) != EOF ) {
     switch ( ch ) {
     default: g_assert_not_reached() ; break ;
     case 'M': ngs = atoi(optarg) ; break ;
     case 'N': ngt = atoi(optarg) ; break ;
-    case 'v': vfile = g_strdup(optarg) ; break ;
+    case 'x': vfile = g_strdup(optarg) ; break ;
     }
   }
-
+  
   gs = gqr_rule_alloc(ngs) ;
   gqr_rule_select(gs, GQR_GAUSS_LEGENDRE, ngs, NULL) ;
   gt = gqr_rule_alloc(ngt) ;

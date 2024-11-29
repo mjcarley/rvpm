@@ -258,11 +258,11 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
   gint i, j ;
 
   /*argument at which g(R/\sigma) reaches machine precision*/
-#ifdef SINGLE_PRECISION
+#ifdef RVPM_SINGLE_PRECISION
   cutoff = 4.2 ;
-#else /*SINGLE_PRECISION*/
+#else /*RVPM_SINGLE_PRECISION*/
   cutoff = 6.2 ;
-#endif /*SINGLE_PRECISION*/
+#endif /*RVPM_SINGLE_PRECISION*/
   
   K[0] = K[1] = K[2] = 0.0 ;
   
@@ -273,6 +273,8 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
 
   if ( R/s > cutoff ) {
     g = 1 ;
+    E = 0.0 ;
+    errfunc = 1.0 ;
   } else {
     E = EXP(-R2/s/s) ;
     errfunc = ERF(R/s) ;
@@ -430,6 +432,51 @@ gint RVPM_FUNCTION_NAME(rvpm_vorticity_velocity_gradient)(rvpm_distribution_t *v
     return 0 ;
   }
   
+  return 0 ;
+}
+
+gint RVPM_FUNCTION_NAME(rvpm_vorticity_derivatives)(RVPM_REAL *G, RVPM_REAL s,
+						    RVPM_REAL f, RVPM_REAL g,
+						    RVPM_REAL *du,
+						    RVPM_REAL *dG,
+						    RVPM_REAL *ds)
+
+{
+  RVPM_REAL dG0[3], dG1[3] ;
+  RVPM_REAL absG, Gh[3], tmp0 ;
+
+  *ds = 0.0 ;  
+  absG = rvpm_vector_length(G) ;
+
+  if ( absG < 1e-12 ) return 0 ;
+
+  /*classical VPM term \Gamma.(\nabla u)*/
+  dG0[0] =
+    G[0]*du[RVPM_GRADIENT_U_X] +
+    G[1]*du[RVPM_GRADIENT_U_Y] +
+    G[2]*du[RVPM_GRADIENT_U_Z] ;
+  dG0[1] =
+    G[0]*du[RVPM_GRADIENT_V_X] +
+    G[1]*du[RVPM_GRADIENT_V_Y] +
+    G[2]*du[RVPM_GRADIENT_V_Z] ;
+  dG0[2] =
+    G[0]*du[RVPM_GRADIENT_W_X] +
+    G[1]*du[RVPM_GRADIENT_W_Y] +
+    G[2]*du[RVPM_GRADIENT_W_Z] ;
+  
+  /*Alvarez and Ning 2024, supplementary material, equations 15 and 16*/
+  Gh[0] = G[0]/absG ; Gh[1] = G[1]/absG ; Gh[2] = G[2]/absG ;
+  tmp0 = rvpm_vector_scalar(dG0,Gh) ;
+  dG1[0] = tmp0*Gh[0] ;
+  dG1[1] = tmp0*Gh[1] ; 
+  dG1[2] = tmp0*Gh[2] ; 
+
+  *ds = -(g + f)/(1.0 + 3*f)*tmp0*s/absG ;
+
+  dG[0] = dG0[0] - (g + f)/(1/3.0+f)*dG1[0] ;
+  dG[1] = dG0[1] - (g + f)/(1/3.0+f)*dG1[1] ;
+  dG[2] = dG0[2] - (g + f)/(1/3.0+f)*dG1[2] ;
+
   return 0 ;
 }
 
