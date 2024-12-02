@@ -896,6 +896,8 @@ static void solver_step_test(void)
   RVPM_REAL h = 0.1 ;
   
   solver_time_step_test(RVPM_TIME_STEP_EULER, h) ;
+  solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_2 , h) ;
+  solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_3 , h) ;
   solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_4 , h) ;
   solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_5 , h) ;
   solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_6 , h) ;

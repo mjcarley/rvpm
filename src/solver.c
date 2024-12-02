@@ -119,7 +119,16 @@ gint RVPM_FUNCTION_NAME(rvpm_solver_coefficients)(rvpm_time_step_t s,
   case RVPM_TIME_STEP_EULER:
     a[0] = 0.0 ; b[0] = 1.0 ;
     *n = 1 ; *p = 1 ;
-    return 0 ;
+    break ;
+  case RVPM_TIME_STEP_WILLIAMSON_2:
+    al[1] = 2.0/3.0 ;
+    wt[0] = 1.0/4.0; wt[1] = 3.0/4.0 ;
+    *n = 2 ; *p = 2 ;
+    break ;
+  case RVPM_TIME_STEP_WILLIAMSON_3:
+    al[1] = 1.0/2.0 ;
+    wt[0] = 0.0 ; wt[1] = 1.0 ;
+    *n = 2 ; *p = 2 ;
     break ;
   case RVPM_TIME_STEP_WILLIAMSON_4:
     al[1] = 2.0/3.0 ; al[2] = 0.0 ; 
@@ -183,6 +192,18 @@ gint RVPM_FUNCTION_NAME(rvpm_solver_coefficients)(rvpm_time_step_t s,
     wt[0] = 1.0/6.0 ; wt[1] = 1.0/6.0 ; wt[2] = 2.0/3.0 ;
     *n = 3 ; *p = 4 ;
     break ;
+  }
+
+  if ( *n == 1 ) {
+    return 0 ;
+  }
+  
+  if ( *n == 2 ) {
+    b[0] = al[1] ; b[1] = wt[1] ;
+    a[0] = 0.0 ;
+    a[1] = (wt[0] - b[0])/wt[1] ;
+
+    return 0 ;
   }
 
   if ( *n == 3 ) {
