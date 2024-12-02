@@ -129,7 +129,8 @@ gint main(gint argc, char **argv)
 				  3, x, w) ;
 
       rvpm_vorticity_velocity_gradient_f(d,
-					     rvpm_solver_regularisation(&solver),
+					     rvpm_solver_regularisation
+					     (&solver),
 					     rvpm_solver_kernel(&solver),
 					     x, v, NULL) ;
       fprintf(stdout,

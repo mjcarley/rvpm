@@ -1,11 +1,4 @@
 # sorting on Morton index and identification of nearest neighbours
 
-# implement time-stepping with solver struct containing main options
 
-# separate velocity evaluation into suitable sized array (velocity and,
-#  optionally, velocity gradient) from time stepping proper, to allow
-#  addition of externally imposed velocities, e.g. from lifting line
-
-# handling of near-field interactions with regularised kernels (subtract
-# singular kernel term and add regularised)
 

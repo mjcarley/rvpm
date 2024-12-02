@@ -868,24 +868,24 @@ static void solver_time_step_test(rvpm_time_step_t s, gdouble h)
 
 {
   gdouble a[4], b[4], x[2], q[2], t ;
-  gint n, ns, i, j ;
+  gint n, ns, i, j, p ;
 
-  rvpm_solver_coefficients(s, a, b, &n) ;
+  rvpm_solver_coefficients(s, a, b, &n, &p) ;
 
   t = 0 ; x[0] = x[1] = 0 ; q[0] = q[1] = 0 ;
   ns = 5 ;
   
   for ( i = 0 ; i < ns ; i ++ ) {
-    for ( j = 0 ; j < n ; j ++ ) {
+    for ( j = 0 ; j < p ; j ++ ) {
       q[0] *= a[j] ; q[1] *= a[j] ;
-      q[0] += h*pow(x[1],n-1) ; q[1] += h ;
+      q[0] += h*pow(x[1],p-1) ; q[1] += h ;
       x[0] += b[j]*q[0] ; x[1] += b[j]*q[1] ;
     }
     t += h ;
   }    
 
   fprintf(stderr, "%lg %lg %lg %lg (%lg)\n",
-	  t, x[1], x[0], pow(t,n)/(n), fabs(x[0] - pow(t,n)/n)) ;
+	  t, x[1], x[0], pow(t,p)/(p), fabs(x[0] - pow(t,p)/p)) ;
   
   return ;
 }
@@ -906,6 +906,8 @@ static void solver_step_test(void)
   solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_12, h) ;
   solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_13, h) ;
   solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_14, h) ;
+  solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_17, h) ;
+  solver_time_step_test(RVPM_TIME_STEP_WILLIAMSON_19, h) ;
   
   return ;
 }

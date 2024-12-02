@@ -51,11 +51,8 @@ typedef enum {
   RVPM_TIME_STEP_WILLIAMSON_12  = 10,
   RVPM_TIME_STEP_WILLIAMSON_13  = 11,
   RVPM_TIME_STEP_WILLIAMSON_14  = 12,
-  RVPM_TIME_STEP_WILLIAMSON_15  = 13,
-  RVPM_TIME_STEP_WILLIAMSON_16  = 14,
-  RVPM_TIME_STEP_WILLIAMSON_17  = 15,
-  RVPM_TIME_STEP_WILLIAMSON_18  = 16,
-  RVPM_TIME_STEP_WILLIAMSON_19  = 17
+  RVPM_TIME_STEP_WILLIAMSON_17  = 13,
+  RVPM_TIME_STEP_WILLIAMSON_19  = 14
 } rvpm_time_step_t ;
 
 typedef enum {
@@ -214,9 +211,9 @@ gint rvpm_solver_solve_f(rvpm_tree_t *tree, rvpm_solver_t *s,
 			 gfloat t, gfloat dt, gfloat *u, gint ustr,
 			 gfloat *work) ;
 gint rvpm_solver_coefficients(rvpm_time_step_t s, gdouble *a, gdouble *b,
-			      gint *n) ;
+			      gint *n, gint *p) ;
 gint rvpm_solver_coefficients_f(rvpm_time_step_t s, gfloat *a, gfloat *b,
-				gint *n) ;
+				gint *n, gint *p) ;
 
 rvpm_kernel_t rvpm_kernel_parse(char *str) ;
 gint rvpm_kernels_list(FILE *f) ;
