@@ -437,6 +437,7 @@ gint RVPM_FUNCTION_NAME(rvpm_vorticity_velocity_gradient)(rvpm_distribution_t *v
 
 gint RVPM_FUNCTION_NAME(rvpm_vorticity_derivatives)(RVPM_REAL *G, RVPM_REAL s,
 						    RVPM_REAL f, RVPM_REAL g,
+						    RVPM_REAL nu,
 						    RVPM_REAL *du,
 						    RVPM_REAL *dG,
 						    RVPM_REAL *ds)
@@ -473,6 +474,8 @@ gint RVPM_FUNCTION_NAME(rvpm_vorticity_derivatives)(RVPM_REAL *G, RVPM_REAL s,
 
   *ds = -(g + f)/(1.0 + 3*f)*tmp0*s/absG ;
 
+  *ds += 2.0*nu/s ;
+  
   dG[0] = dG0[0] - (g + f)/(1/3.0+f)*dG1[0] ;
   dG[1] = dG0[1] - (g + f)/(1/3.0+f)*dG1[1] ;
   dG[2] = dG0[2] - (g + f)/(1/3.0+f)*dG1[2] ;

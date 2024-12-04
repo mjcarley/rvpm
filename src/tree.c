@@ -555,7 +555,7 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_derivatives)(rvpm_tree_t *t,
 {
   gint i ;
   RVPM_REAL utmp[12], *p, *dG, *G, *s, f, g ;
-  RVPM_REAL dG0[3], *ds, reg, dsigt ;
+  RVPM_REAL dG0[3], *ds, reg, dsigt, nu ;
   rvpm_kernel_t kernel ;
   
   g_assert(str >= RVPM_DISTRIBUTION_PARTICLE_SIZE) ;
@@ -565,6 +565,7 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_derivatives)(rvpm_tree_t *t,
   f   = rvpm_solver_model_parameter_f(solver) ;
   g   = rvpm_solver_model_parameter_g(solver) ;
   reg = rvpm_solver_regularisation(solver) ;
+  nu  = rvpm_solver_viscosity(solver) ;
   
   for ( i = 0 ; i < rvpm_distribution_particle_number(t->d) ; i ++ ) {
     p = (RVPM_REAL *)rvpm_distribution_particle(t->d,i) ;
@@ -581,7 +582,7 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_derivatives)(rvpm_tree_t *t,
     dG = &(du[i*str+RVPM_DISTRIBUTION_PARTICLE_VORTICITY]) ;
     ds = &(du[i*str+RVPM_DISTRIBUTION_PARTICLE_RADIUS]) ;
 
-    RVPM_FUNCTION_NAME(rvpm_vorticity_derivatives)(G, *s, f, g,
+    RVPM_FUNCTION_NAME(rvpm_vorticity_derivatives)(G, *s, f, g, nu,
 						   &(utmp[3]), dG0, &dsigt) ;
     
     dG[0] += al*dG0[0] ;

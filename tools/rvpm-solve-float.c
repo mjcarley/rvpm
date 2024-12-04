@@ -80,19 +80,21 @@ gint main(gint argc, char **argv)
   dt = 0.01 ; ns = 10 ; order_max = 10 ; depth = 4 ;
   vfile = NULL ;
 
-  rvpm_solver_kernel(&solver)        = RVPM_KERNEL_GAUSSIAN ;
-  rvpm_solver_time_step(&solver)     = RVPM_TIME_STEP_EULER ;
-  rvpm_solver_method(&solver)        = RVPM_METHOD_CLASSICAL ;
-  rvpm_solver_thread_number(&solver) = 1 ;
-  rvpm_solver_regularisation(&solver)= 1e-6 ;
+  rvpm_solver_kernel(&solver)            = RVPM_KERNEL_GAUSSIAN ;
+  rvpm_solver_time_step(&solver)         = RVPM_TIME_STEP_EULER ;
+  rvpm_solver_method(&solver)            = RVPM_METHOD_CLASSICAL ;
+  rvpm_solver_thread_number(&solver)     = 1 ;
+  rvpm_solver_regularisation(&solver)    = 1e-6 ;
+  rvpm_solver_viscosity(&solver)         = 0.0 ;
   rvpm_solver_model_parameter_f(&solver) = 0.0 ;
   rvpm_solver_model_parameter_g(&solver) = 1/5.0 ;
   
-  rvpm_solver_time_step(&solver)     = RVPM_TIME_STEP_WILLIAMSON_4 ;
+  rvpm_solver_time_step(&solver)     = RVPM_TIME_STEP_WILLIAMSON_19 ;
 
-  while ( (ch = getopt(argc, argv, "d:GL:Mn:r:T:v:W")) != EOF ) {
+  while ( (ch = getopt(argc, argv, "D:d:GL:Mn:r:T:v:Wx:")) != EOF ) {
     switch ( ch ) {
     default: g_assert_not_reached() ; break ;
+    case 'D': depth = atoi(optarg) ; break ;
     case 'd': dt = atof(optarg) ; break ;
     case 'G': solver.kernel = RVPM_KERNEL_GAUSSIAN ; break ;
     case 'L': order_max = atoi(optarg) ; break ;
@@ -100,8 +102,9 @@ gint main(gint argc, char **argv)
     case 'n': ns = atoi(optarg) ; break ;
     case 'r': solver.reg = atof(optarg) ; break ;
     case 'T': solver.nthreads = atoi(optarg) ; break ;
-    case 'v': vfile = g_strdup(optarg) ; break ;
+    case 'v': rvpm_solver_viscosity(&solver) = atof(optarg) ; break ;
     case 'W': solver.kernel = RVPM_KERNEL_WINCKELMANS_LEONARD ; break ;
+    case 'x': vfile = g_strdup(optarg) ; break ;
     }
   }
   

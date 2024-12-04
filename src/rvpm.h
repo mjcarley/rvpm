@@ -156,10 +156,10 @@ gint rvpm_vorticity_velocity_gradient_f(rvpm_distribution_t *v, gfloat e,
 					gfloat *x, gfloat *u,
 					gfloat *du) ;
 gint rvpm_vorticity_derivatives(gdouble *G, gdouble s,
-				gdouble f, gdouble g,
+				gdouble f, gdouble g, gdouble nu,
 				gdouble *du, gdouble *dG, gdouble *ds) ;
 gint rvpm_vorticity_derivatives_f(gfloat *G, gfloat s,
-				  gfloat f, gfloat g,
+				  gfloat f, gfloat g, gfloat nu,
 				  gfloat *du, gfloat *dG, gfloat *ds) ;
 
 rvpm_tree_t *rvpm_tree_new(rvpm_distribution_t *d, gint depth,

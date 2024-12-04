@@ -66,7 +66,7 @@ static void file_close(FILE *f)
 gint main(gint argc, char **argv)
 
 {
-  char ch, *vfile ;
+  char ch ;
   rvpm_distribution_t *d ;
   rvpm_tree_t *tree ;
   rvpm_solver_t solver ;
@@ -78,21 +78,22 @@ gint main(gint argc, char **argv)
   timer = g_timer_new() ;
 
   dt = 0.01 ; ns = 10 ; order_max = 10 ; depth = 4 ;
-  vfile = NULL ;
 
-  rvpm_solver_kernel(&solver)        = RVPM_KERNEL_GAUSSIAN ;
-  rvpm_solver_time_step(&solver)     = RVPM_TIME_STEP_EULER ;
-  rvpm_solver_method(&solver)        = RVPM_METHOD_CLASSICAL ;
-  rvpm_solver_thread_number(&solver) = 1 ;
-  rvpm_solver_regularisation(&solver)= 1e-6 ;
+  rvpm_solver_kernel(&solver)            = RVPM_KERNEL_GAUSSIAN ;
+  rvpm_solver_time_step(&solver)         = RVPM_TIME_STEP_EULER ;
+  rvpm_solver_method(&solver)            = RVPM_METHOD_CLASSICAL ;
+  rvpm_solver_thread_number(&solver)     = 1 ;
+  rvpm_solver_regularisation(&solver)    = 1e-6 ;
+  rvpm_solver_viscosity(&solver)         = 0.0 ;
   rvpm_solver_model_parameter_f(&solver) = 0.0 ;
   rvpm_solver_model_parameter_g(&solver) = 1/5.0 ;
   
-  rvpm_solver_time_step(&solver)     = RVPM_TIME_STEP_WILLIAMSON_4 ;
+  rvpm_solver_time_step(&solver)     = RVPM_TIME_STEP_WILLIAMSON_19 ;
 
-  while ( (ch = getopt(argc, argv, "d:GL:Mn:r:T:v:W")) != EOF ) {
+  while ( (ch = getopt(argc, argv, "D:d:GL:Mn:r:T:v:W")) != EOF ) {
     switch ( ch ) {
     default: g_assert_not_reached() ; break ;
+    case 'D': depth = atoi(optarg) ; break ;
     case 'd': dt = atof(optarg) ; break ;
     case 'G': solver.kernel = RVPM_KERNEL_GAUSSIAN ; break ;
     case 'L': order_max = atoi(optarg) ; break ;
@@ -100,7 +101,7 @@ gint main(gint argc, char **argv)
     case 'n': ns = atoi(optarg) ; break ;
     case 'r': solver.reg = atof(optarg) ; break ;
     case 'T': solver.nthreads = atoi(optarg) ; break ;
-    case 'v': vfile = g_strdup(optarg) ; break ;
+    case 'v': rvpm_solver_viscosity(&solver) = atof(optarg) ; break ;
     case 'W': solver.kernel = RVPM_KERNEL_WINCKELMANS_LEONARD ; break ;
     }
   }
@@ -110,39 +111,6 @@ gint main(gint argc, char **argv)
   fprintf(stderr, "%s: particle distribution read\n", progname) ;
   fprintf(stderr, "%s: %d particles\n",
 	  progname, rvpm_distribution_particle_number(d)) ;
-
-  if ( vfile != NULL ) {
-    input = file_open(vfile, "r", "-", stdin) ;
-
-    while ( fscanf(input, "%FLOATFMT %FLOATFMT %FLOATFMT",
-		   &(x[0]), &(x[1]), &(x[2])) != EOF ) {
-      v[0] = v[1] = v[2] = 0.0 ;
-      w[0] = w[1] = w[2] = 0.0 ;
-      grbf_gaussian_eval_3d_FLOAT((RVPM_REAL *)rvpm_distribution_particle(d,0),
-				  RVPM_DISTRIBUTION_PARTICLE_SIZE,
-				  rvpm_distribution_particle_number(d),
-				  (RVPM_REAL *)
-				  rvpm_distribution_particle_radius(d,0),
-				  RVPM_DISTRIBUTION_PARTICLE_SIZE,
-				  (RVPM_REAL *)rvpm_distribution_vorticity(d,0),
-				  RVPM_DISTRIBUTION_PARTICLE_SIZE,
-				  3, x, w) ;
-
-      rvpm_vorticity_velocity_gradient_FLOAT(d,
-					     rvpm_solver_regularisation
-					     (&solver),
-					     rvpm_solver_kernel(&solver),
-					     x, v, NULL) ;
-      fprintf(stdout,
-	      "%1.16e %1.16e %1.16e %1.16e %1.16e %1.16e "
-	      "%1.16e %1.16e %1.16e\n",
-	      x[0], x[1], x[2], w[0], w[1], w[2], v[0], v[1], v[2]) ;
-    }
-    
-    file_close(input) ;
-
-    return 0 ;    
-  }
 
   fprintf(stderr, "setting up FMM tree\n") ;
   wsize = wbfmm_element_number_rotation(2*order_max) ;

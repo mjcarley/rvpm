@@ -1,0 +1,41 @@
+#!/bin/bash
+
+## Alvarez and Ning validation case from supplement to `Stable Vortex
+## Particle Method Formulation for Meshless Large-Eddy Simulation'
+## https://dx.doi.org/10.2514/1.J063045
+
+BIN=../../tools
+
+sigma=0.0816
+sigma=0.0408
+alpha=0.6
+radius=1.0
+core=0.2
+nu=1.3e-4
+dt=0.01
+kernel=-G
+reg=1e-1
+nthreads=4
+gtol=0.01
+tol=1e-6
+
+## generate initial particle distribution
+${BIN}/rvpm-grid -f vortex_ring -p ${radius} -p ${core} \
+          -s ${sigma} -a ${alpha} -g ${gtol} -t ${tol} > ring.dat
+##alpha=0.8
+##${BIN}/rvpm-grid -f vortex_ring -p ${radius} -p ${core} \
+##      -s ${sigma} -a ${alpha} -g 1e-2 -t 1e-4 > ring.dat
+
+cp ring.dat input.dat
+## time step
+##dt=0.00625
+for (( i=1; i<=100 ; i++ )) do
+    echo step: $i
+    opts="-n 4 -d ${dt} ${kernel} -r ${reg} -v ${nu} -T ${nthreads} -D 5"
+    echo rvpm-solve ${opts}
+    ${BIN}/rvpm-solve ${opts} < input.dat > Data/solution-${i}.dat
+    ## remesh
+    ${BIN}/rvpm-grid -r Data/solution-${i}.dat -a ${alpha} -s ${sigma} \
+		   -g ${gtol} -t ${tol} > input.dat
+    ##cp Data/solution-${i}.dat input.dat
+done

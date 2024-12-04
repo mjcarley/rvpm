@@ -199,10 +199,12 @@ static void file_close(FILE *f)
 gint main(gint argc, char **argv)
 
 {
-  char ch, *vfile ;
+  char ch, *vfile, *dfile ;
   gqr_rule_t *gs, *gt ;
+  rvpm_distribution_t *d ;
+  rvpm_solver_t solver ;
   gint ngs, ngt ;
-  gdouble data[16], r, z, th, ur, uz, x[3], u[3], r0, z0, sigma, G ;
+  gdouble data[16], r, z, th, ur, uz, x[3], u[3], w[3], r0, z0, sigma, G ;
   gdouble rmax, zmin, zmax ;
   FILE *output, *input ;
   
@@ -210,17 +212,28 @@ gint main(gint argc, char **argv)
   timer = g_timer_new() ;
   output = stdout ;
   
-  vfile = NULL ; gs = gt = NULL ;
+  vfile = NULL ; dfile = NULL ;
+  gs = gt = NULL ;
   ngs = ngt = 32 ;
 
   r0 = 0.9 ; z0 = 0.0 ; sigma = 0.1 ; G = 1.0 ;
+
+  rvpm_solver_kernel(&solver)            = RVPM_KERNEL_GAUSSIAN ;
+  /* rvpm_solver_time_step(&solver)         = RVPM_TIME_STEP_EULER ; */
+  rvpm_solver_method(&solver)            = RVPM_METHOD_CLASSICAL ;
+  rvpm_solver_thread_number(&solver)     = 1 ;
+  rvpm_solver_regularisation(&solver)    = 1e-6 ;
+  /* rvpm_solver_viscosity(&solver)         = 0.0 ; */
+  /* rvpm_solver_model_parameter_f(&solver) = 0.0 ; */
+  /* rvpm_solver_model_parameter_g(&solver) = 1/5.0 ; */
   
   while ( (ch = getopt(argc, argv, "d:M:N:v:")) != EOF ) {
     switch ( ch ) {
     default: g_assert_not_reached() ; break ;
+    case 'd': dfile = g_strdup(optarg) ; break ;
     case 'M': ngs = atoi(optarg) ; break ;
     case 'N': ngt = atoi(optarg) ; break ;
-    case 'x': vfile = g_strdup(optarg) ; break ;
+    case 'v': vfile = g_strdup(optarg) ; break ;
     }
   }
   
@@ -234,7 +247,15 @@ gint main(gint argc, char **argv)
   rmax = 5.0*r0 ;
   zmin = -5.0*r0 ; zmax = 5.0*r0 ; 
   
-  if ( vfile != NULL ) {
+  if ( dfile != NULL ) {
+    input = file_open(dfile, "r", "-", stdin) ;
+
+    d = rvpm_distribution_read_alloc(input) ;
+
+    file_close(input) ;
+  }
+
+  if ( vfile != NULL && dfile == NULL ) {
     data[0] = r0 ; data[1] = z0 ; data[2] = sigma ; data[3] = G ;
 
     input = file_open(vfile, "r", "-", stdin) ;
@@ -253,6 +274,38 @@ gint main(gint argc, char **argv)
 	      x[0], x[1], x[2], u[0], u[1], u[2]) ;
     }
 
+    file_close(input) ;
+
+    return 0 ;
+  }
+
+  if ( vfile != NULL && dfile != NULL ) {
+    input = file_open(vfile, "r", "-", stdin) ;
+
+    while ( fscanf(input, "%lg %lg %lg", &(x[0]), &(x[1]), &(x[2])) != EOF ) {
+      u[0] = u[1] = u[2] = 0.0 ;
+      w[0] = w[1] = w[2] = 0.0 ;
+      grbf_gaussian_eval_3d((gdouble *)rvpm_distribution_particle(d,0),
+			    RVPM_DISTRIBUTION_PARTICLE_SIZE,
+			    rvpm_distribution_particle_number(d),
+			    (gdouble *)
+			    rvpm_distribution_particle_radius(d,0),
+			    RVPM_DISTRIBUTION_PARTICLE_SIZE,
+			    (gdouble *)rvpm_distribution_vorticity(d,0),
+			    RVPM_DISTRIBUTION_PARTICLE_SIZE,
+			    3, x, w) ;
+      
+      rvpm_vorticity_velocity_gradient(d,
+				       rvpm_solver_regularisation
+				       (&solver),
+				       rvpm_solver_kernel(&solver),
+				       x, u, NULL) ;
+      fprintf(stdout,
+	      "%1.16e %1.16e %1.16e %1.16e %1.16e %1.16e "
+	      "%1.16e %1.16e %1.16e\n",
+	      x[0], x[1], x[2], w[0], w[1], w[2], u[0], u[1], u[2]) ;
+    }
+    
     file_close(input) ;
 
     return 0 ;
