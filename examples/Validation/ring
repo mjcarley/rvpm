@@ -20,9 +20,15 @@ nu=1.3e-4
 dt=0.0025
 kernel=-G
 nthreads=4
+depth=5
+order=14
 ## 5% of peak vorticity
 gtol=0.01
 tol=1e-6
+## number of time steps between remeshes
+substeps=8
+## number of times to call solver
+nsteps=100
 
 mkdir -p Data
 
@@ -36,9 +42,9 @@ ${BIN}/rvpm-grid -f vortex_ring -p ${radius} -p ${core} \
 cp ring.dat input.dat
 ## time step
 ##dt=0.00625
-for (( i=1; i<=100 ; i++ )) do
+for (( i=1; i<=${nsteps} ; i++ )) do
     echo step: $i
-    opts="-n 8 -d ${dt} ${kernel} -v ${nu} -T ${nthreads} -D 4 -L 12"
+    opts="-n ${substeps} -d ${dt} ${kernel} -v ${nu} -T ${nthreads} -D ${depth} -L ${order}"
     echo rvpm-solve ${opts}
     ${BIN}/rvpm-solve ${opts} < input.dat > Data/solution-${i}.dat
     ## remesh

@@ -451,7 +451,7 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_velocity_gradient)(rvpm_tree_t *t,
     /*   box_curl_gradient_correct_GS(t->t, box->i, box->i+box->n, src, */
     /* 				   sstr, sig, sigstr, x, u, du) ; */
     /* } */
-    return 0 ;
+    /* return 0 ; */
     break ;
   }
   

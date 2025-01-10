@@ -1,4 +1,6 @@
 # sorting on Morton index and identification of nearest neighbours
 
+# threaded kernel correction after FMM calculation
 
+# use FMM tree to find other points within kernel cutoff range
 

@@ -34,7 +34,7 @@
 #define HAVE_LIBM 1
 
 /* Define to 1 if you have the `matheval' library (-lmatheval). */
-#define HAVE_LIBMATHEVAL 1
+/* #undef HAVE_LIBMATHEVAL */
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
