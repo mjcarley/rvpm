@@ -443,9 +443,15 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_velocity_gradient)(rvpm_tree_t *t,
     sig = &reg ; sigstr = 0 ; 
     break ;
   case RVPM_KERNEL_GAUSSIAN:
-    correction_func = box_curl_gradient_correct_GS ;
+    /* correction_func = box_curl_gradient_correct_GS ; */
     sig = (RVPM_REAL *)rvpm_distribution_particle_radius(d,0) ;
     sigstr = sstr ; 
+    for ( i = 0 ; i < nnbr ; i ++ ) {
+      box = &(boxes[neighbours[i]]) ;
+      box_curl_gradient_correct_GS(t->t, box->i, box->i+box->n, src,
+				   sstr, sig, sigstr, x, u, du) ;
+    }
+    return 0 ;
     break ;
   }
   
@@ -454,6 +460,7 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_velocity_gradient)(rvpm_tree_t *t,
     correction_func(t->t, box->i, box->i+box->n, src, sstr, sig, sigstr, x,
 		    u, du) ;
   }
+
   return 0 ;
 }
 

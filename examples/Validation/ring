@@ -24,6 +24,8 @@ nthreads=4
 gtol=0.01
 tol=1e-6
 
+mkdir -p Data
+
 ## generate initial particle distribution
 ${BIN}/rvpm-grid -f vortex_ring -p ${radius} -p ${core} \
           -s ${sigma} -a ${alpha} -g ${gtol} -t ${tol} > ring.dat
