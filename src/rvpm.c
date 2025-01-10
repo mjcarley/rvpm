@@ -120,13 +120,17 @@ gint RVPM_FUNCTION_NAME(rvpm_distribution_contiguous_to_interleaved)(rvpm_distri
   return 0 ;
 }
 
-rvpm_distribution_t *RVPM_FUNCTION_NAME(rvpm_distribution_read_alloc)(FILE *f)
+rvpm_distribution_t *RVPM_FUNCTION_NAME(rvpm_distribution_read_alloc)(FILE *f,
+								      gint n)
 
 {
   rvpm_distribution_t *d ;
   RVPM_REAL limits[6], smax, *data ;
+  gdouble *c ;
   gint np, i ;
 
+  g_assert(n >= 0) ;
+  
   fscanf(f, "%d", &np) ;
 #ifdef RVPM_SINGLE_PRECISION
   for ( i = 0 ; i < 6 ; i ++ ) fscanf(f, "%g", &(limits[i])) ;
@@ -136,7 +140,7 @@ rvpm_distribution_t *RVPM_FUNCTION_NAME(rvpm_distribution_read_alloc)(FILE *f)
   fscanf(f, "%lg", &smax) ;
 #endif /*RVPM_SINGLE_PRECISION*/
 
-  d = RVPM_FUNCTION_NAME(rvpm_distribution_alloc)(np) ;
+  d = RVPM_FUNCTION_NAME(rvpm_distribution_alloc)(np+n) ;
   data = (RVPM_REAL *)rvpm_distribution_particle(d, 0) ;
   
   for ( i = 0 ; i < np*RVPM_DISTRIBUTION_PARTICLE_SIZE ; i ++ ) {
@@ -148,6 +152,12 @@ rvpm_distribution_t *RVPM_FUNCTION_NAME(rvpm_distribution_read_alloc)(FILE *f)
   }    
 
   rvpm_distribution_particle_number(d) = np ;
+
+  c = rvpm_distribution_origin(d) ;
+  c[0] = limits[0] ; c[1] = limits[2] ; c[2] = limits[4] ;
+  rvpm_distribution_width(d) = MAX(limits[1] - limits[0],
+				   MAX(limits[3] - limits[2],
+				       limits[5] - limits[4])) ;
   
   return d ;
 }
@@ -186,3 +196,33 @@ gint RVPM_FUNCTION_NAME(rvpm_distribution_particle_add)(rvpm_distribution_t *d,
   return 0 ;
 }
 			
+gint RVPM_FUNCTION_NAME(rvpm_distribution_limits_crop)(rvpm_distribution_t *d,
+						       RVPM_REAL gcrop,
+						       RVPM_REAL *limits)
+
+{
+  RVPM_REAL bounds[6], *x, *w, absw ;  
+  gint i ;
+
+  bounds[0] = bounds[2] = bounds[4] =  G_MAXFLOAT ;
+  bounds[1] = bounds[3] = bounds[5] = -G_MAXFLOAT ;
+  for ( i = 0 ; i < rvpm_distribution_particle_number(d) ; i ++ ) {
+    w = (RVPM_REAL *)rvpm_distribution_vorticity(d, i) ;
+    absw = rvpm_vector_length(w) ;
+    if ( absw > gcrop ) {
+      x = (RVPM_REAL *)rvpm_distribution_particle(d, i) ;
+      bounds[0] = MIN(bounds[0], x[0]) ;
+      bounds[1] = MAX(bounds[1], x[0]) ;
+      bounds[2] = MIN(bounds[2], x[1]) ;
+      bounds[3] = MAX(bounds[3], x[1]) ;
+      bounds[4] = MIN(bounds[4], x[2]) ;
+      bounds[5] = MAX(bounds[5], x[2]) ;
+    }
+  }
+
+  limits[0] = bounds[0] ; limits[1] = bounds[1] ; 
+  limits[2] = bounds[2] ; limits[3] = bounds[3] ; 
+  limits[4] = bounds[4] ; limits[5] = bounds[5] ; 
+  
+  return 0 ;
+}

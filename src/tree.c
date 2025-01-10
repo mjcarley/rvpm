@@ -95,7 +95,13 @@ rvpm_tree_t *RVPM_FUNCTION_NAME(rvpm_tree_new)(rvpm_distribution_t *d,
   wbfmm_tree_problem(t->t) = WBFMM_PROBLEM_LAPLACE ;
   wbfmm_tree_source_size(t->t) = 3 ;
   for ( i = 1 ; i <= depth ; i ++ ) {
-    RVPM_FUNCTION_NAME(wbfmm_tree_laplace_coefficient_init)(t->t, i, order_max, order_max) ;
+    RVPM_FUNCTION_NAME(wbfmm_tree_laplace_coefficient_init)(t->t, i, order_max,
+							    order_max) ;
+    order_max -= 2 ;
+    if ( order_max <= 0 ) {
+      g_error("%s: expansion order (%d) out of range at level %d\n",
+	      __FUNCTION__, order_max, i) ;
+    }
   }  
   
   return t ;

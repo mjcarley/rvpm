@@ -33,33 +33,61 @@ GTimer *timer ;
 
 char *progname ;
 
-static FILE *file_open(char *file, char *mode,
-		       char *file_default, FILE *fdefault)
+/* static FILE *file_open(char *file, char *mode, */
+/* 		       char *file_default, FILE *fdefault) */
+
+/* { */
+/*   FILE *f ; */
+
+/*   if ( file_default != NULL ) { */
+/*     if ( strcmp(file, file_default) == 0 ) return fdefault ; */
+/*   } */
+  
+/*   f = fopen(file, mode) ; */
+
+/*   if ( f == NULL ) { */
+/*     fprintf(stderr, "%s: cannot open file \"%s\"\n", progname, file) ; */
+/*     exit(1) ; */
+/*   } */
+  
+/*   return f ; */
+/* } */
+
+/* static void file_close(FILE *f) */
+
+/* { */
+/*   if ( f == stdin || f == stdout || f == stderr ) return ; */
+
+/*   fclose(f) ; */
+  
+/*   return ; */
+/* } */
+
+static void print_help_text(FILE *f, gint depth, RVPM_REAL dt,
+			    rvpm_kernel_t kernel, gint order_max,
+			    gint ns, RVPM_REAL reg, gint nthreads,
+			    RVPM_REAL nu)
 
 {
-  FILE *f ;
+  fprintf(f,
+	  "%s: advance a vorticity distribution in time\n\n"
+	  "Usage: %s <options> < (input file) > (output file)\n\n",
+	  progname, progname) ;
+  fprintf(f,
+	  "Options:\n\n"
+	  "  -h print this message and exit\n"
+	  "  -D # depth of FMM tree for velocity evaluation (%d)\n"
+	  "  -d # time step (%FLOATFMT)\n"
+	  "  -G select Gaussian interpolation kernel\n"
+	  "  -L # maximum expansion order in FMM tree (%d)\n"
+	  "  -M select Moore-Rosenhead kernel (deprecated)\n"
+	  "  -n # number of time steps (%d)\n"
+	  "  -r # regularisation parameter (%FLOATFMT)\n"
+	  "  -T # number of threads in velocity evaluation (%d)\n"
+	  "  -v # viscosity (%FLOATFMT)\n"
+	  "  -W select Winckelmans-Leonard kernel (deprecated)\n",
+	  depth, dt, order_max, ns, reg, nthreads, nu) ;
 
-  if ( file_default != NULL ) {
-    if ( strcmp(file, file_default) == 0 ) return fdefault ;
-  }
-  
-  f = fopen(file, mode) ;
-
-  if ( f == NULL ) {
-    fprintf(stderr, "%s: cannot open file \"%s\"\n", progname, file) ;
-    exit(1) ;
-  }
-  
-  return f ;
-}
-
-static void file_close(FILE *f)
-
-{
-  if ( f == stdin || f == stdout || f == stderr ) return ;
-
-  fclose(f) ;
-  
   return ;
 }
 
@@ -70,9 +98,9 @@ gint main(gint argc, char **argv)
   rvpm_distribution_t *d ;
   rvpm_tree_t *tree ;
   rvpm_solver_t solver ;
-  RVPM_REAL dt, *u, t0, *work, x[3], v[3], w[3] ;
+  RVPM_REAL dt, *u, t0, *work ;
   gint ns, i, ustr, order_max, depth, wsize ;
-  FILE *input ;
+  /* FILE *input ; */
   
   progname = g_strdup(g_path_get_basename(argv[0])) ;
   timer = g_timer_new() ;
@@ -90,9 +118,18 @@ gint main(gint argc, char **argv)
   
   rvpm_solver_time_step(&solver)     = RVPM_TIME_STEP_WILLIAMSON_19 ;
 
-  while ( (ch = getopt(argc, argv, "D:d:GL:Mn:r:T:v:W")) != EOF ) {
+  while ( (ch = getopt(argc, argv, "hD:d:GL:Mn:r:T:v:W")) != EOF ) {
     switch ( ch ) {
     default: g_assert_not_reached() ; break ;
+    case 'h':
+      print_help_text(stderr, depth, dt,
+		      rvpm_solver_kernel(&solver),
+		      order_max, ns,
+		      rvpm_solver_regularisation(&solver),		      
+		      rvpm_solver_thread_number(&solver),
+		      rvpm_solver_viscosity(&solver)) ;
+      return 0 ;
+      break ;
     case 'D': depth = atoi(optarg) ; break ;
     case 'd': dt = atof(optarg) ; break ;
     case 'G': solver.kernel = RVPM_KERNEL_GAUSSIAN ; break ;
@@ -106,7 +143,7 @@ gint main(gint argc, char **argv)
     }
   }
   
-  d = rvpm_distribution_read_alloc_FLOAT(stdin) ;
+  d = rvpm_distribution_read_alloc_FLOAT(stdin, 0) ;
 
   fprintf(stderr, "%s: particle distribution read\n", progname) ;
   fprintf(stderr, "%s: %d particles\n",

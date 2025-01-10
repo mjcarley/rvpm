@@ -72,129 +72,25 @@ static void file_close(FILE *f)
   return ;
 }
 
-/* gint vortex_ring(gdouble *x, gdouble *p, gint np, gdouble *w, gboolean limits) */
+static void print_help_text(FILE *f)
 
-/* { */
-/*   gdouble r0, w0, z0, G, r, r2, th, z, s, ee ; */
-
-/*   if ( np < 2 ) { */
-/*     fprintf(stderr, "%s: vortex ring requires at least two parameters\n", */
-/* 	    progname) ; */
-/*     return 1 ; */
-/*   } */
-
-/*   r0 = p[0] ; s = p[1] ; */
-/*   if ( np < 3 ) z0 = 0.0 ; else z0 = p[2] ; */
-/*   if ( np < 4 ) G = 1.0 ; else G = p[3] ; */
-
-/*   w0 = G/(M_PI*s*s) ; */
+{
+  fprintf(f,
+	  "%s: postprocessing and other utilities\n\n"
+	  "Usage: %s [options]\n\n", progname, progname) ;
+  fprintf(f,
+	  "Options:\n\n"
+	  "  -h print this message and exit\n"
+	  "  -d (vorticity distribution filename)\n"
+	  "  -M # number of radial Gauss quadrature points in streamfunction\n"
+	  "       evaluation\n"
+	  "  -N # number of angular Gauss quadrature points in streamfunction\n"
+	  "       evaluation\n"
+	  "  -v (file of field points for evaluation of velocity and "
+	  "vorticity)\n") ;
   
-/*   if ( limits ) { */
-/*     /\*treat the first entry of w as a tolerance to be used in finding */
-/*       the limits of the grid box*\/ */
-/*     ee = w[0] ; */
-/*     r = sqrt(-s*s*log(ee/w0)) ; */
-/*     x[0] = -r0 - r ; x[1] =  r0 + r ; */
-/*     x[2] = -r0 - r ; x[3] =  r0 + r ; */
-/*     x[4] =  z0 - r ; x[5] =  z0 + r ; */
-
-/*     return 0 ; */
-/*   } */
-
-/*   r = sqrt(x[0]*x[0] + x[1]*x[1]) ; */
-/*   th = atan2(x[1], x[0]) ; */
-/*   z = x[2] ; */
-
-/*   r2 = (r - r0)*(r - r0) + (z-z0)*(z-z0) ; */
-/*   w0 *= exp(-r2/s/s) ; */
-
-/*   w[0] += -w0*sin(th) ; */
-/*   w[1] +=  w0*cos(th) ; */
-/*   w[2] +=  0.0 ; */
-  
-/*   return 0 ; */
-/* } */
-
-/* static gpointer parse_func(char *str) */
-
-/* { */
-/*   gint i ; */
-
-/*   for ( i = 0 ; source_functions[i] != NULL ; i += 2 ) { */
-/*     if ( strcmp((char *)source_functions[i], str) == 0 ) { */
-/*       return source_functions[i+1] ; */
-/*     } */
-/*   } */
-  
-/*   return NULL ; */
-/* } */
-
-/* static gint grid_limits(gdouble *wt, gdouble xmin, gdouble ymin, gdouble zmin, */
-/* 			gint nx, gint ny, gint nz, gdouble h, */
-/* 			gdouble *limits, gdouble tol) */
-
-/* { */
-/*   gint i, j, k, np ; */
-/*   gdouble x[3], *w, norm ; */
-  
-/*   np = 0 ; */
-
-/*   limits[0] = limits[2] = limits[4] =  G_MAXDOUBLE ; */
-/*   limits[1] = limits[3] = limits[5] = -G_MAXDOUBLE ; */
-  
-/*   for ( i = 0 ; i < nx ; i ++ ) { */
-/*     x[0] = xmin + h*i ; */
-/*     for ( j = 0 ; j < ny ; j ++ ) { */
-/*       x[1] = ymin + h*j ; */
-/*       for ( k = 0 ; k < nz ; k ++ ) { */
-/* 	x[2] = zmin + h*k ; */
-/* 	w = &(wt[3*(i*ny*nz + j*nz + k)]) ; */
-/* 	norm = w[0]*w[0] + w[1]*w[1] + w[2]*w[2] ; */
-/* 	if ( norm > tol*tol ) { */
-/* 	  limits[0] = MIN(x[0],limits[0]) ; */
-/* 	  limits[1] = MAX(x[0],limits[1]) ; */
-/* 	  limits[2] = MIN(x[1],limits[2]) ; */
-/* 	  limits[3] = MAX(x[1],limits[3]) ; */
-/* 	  limits[4] = MIN(x[2],limits[4]) ; */
-/* 	  limits[5] = MAX(x[2],limits[5]) ; */
-/* 	  np ++ ; */
-/* 	} */
-/*       } */
-/*     } */
-/*   } */
-
-/*   return np ; */
-/* } */
-
-/* static void write_active_nodes(FILE *f, gdouble *wt, */
-/* 			       gdouble xmin, gdouble ymin, gdouble zmin, */
-/* 			       gint nx, gint ny, gint nz, gdouble h, gdouble s, */
-/* 			       gdouble tol) */
-
-/* { */
-/*   gint i, j, k ; */
-/*   gdouble x[3], *w, norm, sc ; */
-
-/*   sc = M_PI*sqrt(M_PI)*s*s*s ; */
-
-/*   for ( i = 0 ; i < nx ; i ++ ) { */
-/*     x[0] = xmin + h*i ; */
-/*     for ( j = 0 ; j < ny ; j ++ ) { */
-/*       x[1] = ymin + h*j ; */
-/*       for ( k = 0 ; k < nz ; k ++ ) { */
-/* 	x[2] = zmin + h*k ; */
-/* 	w = &(wt[3*(i*ny*nz + j*nz + k)]) ; */
-/* 	norm = w[0]*w[0] + w[1]*w[1] + w[2]*w[2] ; */
-/* 	if ( norm > tol*tol ) { */
-/* 	  fprintf(f, "%1.16e %1.16e %1.16e %1.16e %1.16e %1.16e %1.16e\n", */
-/* 		  x[0], x[1], x[2], w[0]*sc, w[1]*sc, w[2]*sc, s) ; */
-/* 	} */
-/*       } */
-/*     } */
-/*   } */
-
-/*   return ; */
-/* } */
+  return ;
+}
 
 gint main(gint argc, char **argv)
 
@@ -203,9 +99,10 @@ gint main(gint argc, char **argv)
   gqr_rule_t *gs, *gt ;
   rvpm_distribution_t *d ;
   rvpm_solver_t solver ;
-  gint ngs, ngt ;
+  gint ngs, ngt, i, j ;
   gdouble data[16], r, z, th, ur, uz, x[3], u[3], w[3], r0, z0, sigma, G ;
-  gdouble rmax, zmin, zmax ;
+  gdouble rmax, zmin, zmax, limits[6], s, t, *c, D, L[4], xc[12], gcrop ;
+  gboolean calc_velocity ;
   FILE *output, *input ;
   
   progname = g_strdup(g_path_get_basename(argv[0])) ;
@@ -213,9 +110,11 @@ gint main(gint argc, char **argv)
   output = stdout ;
   
   vfile = NULL ; dfile = NULL ;
+  calc_velocity = FALSE ;
   gs = gt = NULL ;
   ngs = ngt = 32 ;
-
+  d = NULL ;
+  
   r0 = 0.9 ; z0 = 0.0 ; sigma = 0.1 ; G = 1.0 ;
 
   rvpm_solver_kernel(&solver)            = RVPM_KERNEL_GAUSSIAN ;
@@ -227,9 +126,13 @@ gint main(gint argc, char **argv)
   /* rvpm_solver_model_parameter_f(&solver) = 0.0 ; */
   /* rvpm_solver_model_parameter_g(&solver) = 1/5.0 ; */
   
-  while ( (ch = getopt(argc, argv, "d:M:N:v:")) != EOF ) {
+  while ( (ch = getopt(argc, argv, "hd:M:N:v:")) != EOF ) {
     switch ( ch ) {
     default: g_assert_not_reached() ; break ;
+    case 'h':
+      print_help_text(stderr) ;
+      return 0 ;
+      break ;
     case 'd': dfile = g_strdup(optarg) ; break ;
     case 'M': ngs = atoi(optarg) ; break ;
     case 'N': ngt = atoi(optarg) ; break ;
@@ -237,11 +140,6 @@ gint main(gint argc, char **argv)
     }
   }
   
-  gs = gqr_rule_alloc(ngs) ;
-  gqr_rule_select(gs, GQR_GAUSS_LEGENDRE, ngs, NULL) ;
-  gt = gqr_rule_alloc(ngt) ;
-  gqr_rule_select(gt, GQR_GAUSS_LEGENDRE, ngt, NULL) ;
-
   /* rmax = r0 + 10.0*sigma ;  */
   /* zmin = -3.0*r0 ; zmax = 3.0*r0 ;  */
   rmax = 5.0*r0 ;
@@ -250,12 +148,17 @@ gint main(gint argc, char **argv)
   if ( dfile != NULL ) {
     input = file_open(dfile, "r", "-", stdin) ;
 
-    d = rvpm_distribution_read_alloc(input) ;
+    d = rvpm_distribution_read_alloc(input, 0) ;
 
     file_close(input) ;
   }
 
   if ( vfile != NULL && dfile == NULL ) {
+    gs = gqr_rule_alloc(ngs) ;
+    gqr_rule_select(gs, GQR_GAUSS_LEGENDRE, ngs, NULL) ;
+    gt = gqr_rule_alloc(ngt) ;
+    gqr_rule_select(gt, GQR_GAUSS_LEGENDRE, ngt, NULL) ;
+
     data[0] = r0 ; data[1] = z0 ; data[2] = sigma ; data[3] = G ;
 
     input = file_open(vfile, "r", "-", stdin) ;
@@ -295,20 +198,92 @@ gint main(gint argc, char **argv)
 			    RVPM_DISTRIBUTION_PARTICLE_SIZE,
 			    3, x, w) ;
       
-      rvpm_vorticity_velocity_gradient(d,
-				       rvpm_solver_regularisation
-				       (&solver),
-				       rvpm_solver_kernel(&solver),
-				       x, u, NULL) ;
+      if ( calc_velocity ) {
+	rvpm_vorticity_velocity_gradient(d,
+					 rvpm_solver_regularisation
+					 (&solver),
+					 rvpm_solver_kernel(&solver),
+					 x, u, NULL) ;
+      }
       fprintf(stdout,
-	      "%1.16e %1.16e %1.16e %1.16e %1.16e %1.16e "
-	      "%1.16e %1.16e %1.16e\n",
-	      x[0], x[1], x[2], w[0], w[1], w[2], u[0], u[1], u[2]) ;
+	      "%1.16e %1.16e %1.16e %1.16e %1.16e %1.16e ",
+	      x[0], x[1], x[2], w[0], w[1], w[2]) ;
+      if ( calc_velocity ) {
+	fprintf(stdout, "%1.16e %1.16e %1.16e", u[0], u[1], u[2]) ;
+      }
+      fprintf(stdout, "\n") ;
+      /* rvpm_vorticity_velocity_gradient(d, */
+      /* 				       rvpm_solver_regularisation */
+      /* 				       (&solver), */
+      /* 				       rvpm_solver_kernel(&solver), */
+      /* 				       x, u, NULL) ; */
+      /* fprintf(stdout, */
+      /* 	      "%1.16e %1.16e %1.16e %1.16e %1.16e %1.16e " */
+      /* 	      "%1.16e %1.16e %1.16e\n", */
+      /* 	      x[0], x[1], x[2], w[0], w[1], w[2], u[0], u[1], u[2]) ; */
     }
     
     file_close(input) ;
 
     return 0 ;
+  }
+
+  ngs = 64 ; ngt = 64 ;
+
+  c = rvpm_distribution_origin(d) ;
+  D = rvpm_distribution_width(d) ;
+  limits[0] = c[0] ; limits[1] = c[0] + D ;
+  limits[2] = c[1] ; limits[3] = c[1] + D ;
+  limits[4] = c[2] ; limits[5] = c[2] + D ;
+
+  gcrop = 1e-6 ;
+
+  rvpm_distribution_limits_crop(d, gcrop, limits) ;
+  
+  xc[3*0+0] = limits[0] ; xc[3*0+1] = 0.0 ; xc[3*0+2] = limits[4] ;
+  xc[3*1+0] = limits[1] ; xc[3*1+1] = 0.0 ; xc[3*1+2] = limits[4] ;
+  xc[3*2+0] = limits[1] ; xc[3*2+1] = 0.0 ; xc[3*2+2] = limits[5] ;
+  xc[3*3+0] = limits[0] ; xc[3*3+1] = 0.0 ; xc[3*3+2] = limits[5] ;
+  
+  for ( i = 0 ; i < ngs ; i ++ ) {
+    s = ((gdouble)i)/(ngs - 1) ;
+    for ( j = 0 ; j < ngt ; j ++ ) {
+      t = ((gdouble)j)/(ngt - 1) ;
+      L[0] = (1.0 - s)*(1.0 - t) ;
+      L[1] =        s *(1.0 - t) ;
+      L[2] =        s *       t ;
+      L[3] = (1.0 - s)*       t ;
+      x[0] = L[0]*xc[3*0+0] + L[1]*xc[3*1+0] + L[2]*xc[3*2+0] + L[3]*xc[3*3+0] ;
+      x[1] = L[0]*xc[3*0+1] + L[1]*xc[3*1+1] + L[2]*xc[3*2+1] + L[3]*xc[3*3+1] ;
+      x[2] = L[0]*xc[3*0+2] + L[1]*xc[3*1+2] + L[2]*xc[3*2+2] + L[3]*xc[3*3+2] ;
+      u[0] = u[1] = u[2] = 0.0 ;
+      w[0] = w[1] = w[2] = 0.0 ;
+      grbf_gaussian_eval_3d((gdouble *)rvpm_distribution_particle(d,0),
+			    RVPM_DISTRIBUTION_PARTICLE_SIZE,
+			    rvpm_distribution_particle_number(d),
+			    (gdouble *)
+			    rvpm_distribution_particle_radius(d,0),
+			    RVPM_DISTRIBUTION_PARTICLE_SIZE,
+			    (gdouble *)rvpm_distribution_vorticity(d,0),
+			    RVPM_DISTRIBUTION_PARTICLE_SIZE,
+			    3, x, w) ;
+
+      if ( calc_velocity ) {
+	rvpm_vorticity_velocity_gradient(d,
+					 rvpm_solver_regularisation
+					 (&solver),
+					 rvpm_solver_kernel(&solver),
+					 x, u, NULL) ;
+      }
+      fprintf(stdout,
+	      "%1.16e %1.16e %1.16e %1.16e %1.16e %1.16e ",
+	      x[0], x[1], x[2], w[0], w[1], w[2]) ;
+      if ( calc_velocity ) {
+	fprintf(stdout, "%1.16e %1.16e %1.16e", u[0], u[1], u[2]) ;
+      }
+      fprintf(stdout, "\n") ;
+    }
+    
   }
   
   return 0 ;
