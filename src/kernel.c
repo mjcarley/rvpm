@@ -188,7 +188,7 @@ static void kernel_GS(RVPM_REAL *x, RVPM_REAL *y,
 {
   RVPM_REAL R, R2, R3, r[3], g, cutoff ;
 
-  cutoff = 6.2 ;
+  cutoff = 6.3*s ;
   /* cutoff = 3 ; */
   
   rvpm_vector_diff(r,x,y) ;
