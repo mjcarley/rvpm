@@ -269,6 +269,9 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
   rvpm_vector_diff(r,x,y) ;
   R2 = rvpm_vector_scalar(r,r) ;
   R  = SQRT(R2) ;
+
+  if ( R < 1e-9 ) return 0 ;
+  
   R3 = R*R2 ;
 
   if ( R/s > cutoff ) {
@@ -281,11 +284,11 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
     g = errfunc - M_2_SQRTPI*R/s*E ;
   }
 
-  if ( R > 1e-9 ) {
-    K[0] = -g*r[0]/R3*0.25*M_1_PI ;
-    K[1] = -g*r[1]/R3*0.25*M_1_PI ;
-    K[2] = -g*r[2]/R3*0.25*M_1_PI ;
-  }
+  /* if ( R > 1e-9 ) { */
+  K[0] = -g*r[0]/R3*0.25*M_1_PI ;
+  K[1] = -g*r[1]/R3*0.25*M_1_PI ;
+  K[2] = -g*r[2]/R3*0.25*M_1_PI ;
+  /* } */
   
   if ( dK == NULL ) return 0 ;
 

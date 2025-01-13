@@ -35,9 +35,13 @@ char *progname ;
 
 gint vortex_ring(gdouble *x, gdouble *p, gint np, gdouble *w, gboolean) ;
 
+#define SOURCE_FUNCTION_SIZE 3
+
 gpointer source_functions[] = {
-  "vortex_ring", vortex_ring,
-  NULL, NULL
+  "vortex_ring",
+  vortex_ring,
+  "(ring radius, core radius, [axial displacement], [circulation])",
+  NULL, NULL, NULL
 } ;
 
 static FILE *file_open(char *file, char *mode,
@@ -67,6 +71,29 @@ static void file_close(FILE *f)
 
   fclose(f) ;
   
+  return ;
+}
+
+static void print_help_text(FILE *f, gdouble al, gdouble gtol, gdouble sg,
+			    gdouble tol)
+
+{
+  fprintf(f,
+	  "%s: discretization of vorticity distributions\n\n"
+	  "Usage: %s <options> > (output file)\n\n",
+	  progname, progname) ;
+  fprintf(f,
+	  "Options:\n\n"
+	  "  -h print this message and exit\n"
+	  "  -a # overlap parameter alpha (%lg)\n"
+	  "  -g # vorticity cutoff magnitude (%lg)\n"
+	  "  -f # source function\n"
+	  "  -p # parameter to pass to source function\n"
+	  "  -r # input file for regridding\n"
+	  "  -s # particle spacing sigma (%lg)\n"
+	  "  -t # Gaussian RBF accuracy tolerance (%lg)\n",
+	  al, gtol, sg, tol) ;
+	  
   return ;
 }
 
@@ -118,13 +145,32 @@ static gpointer parse_func(char *str)
 {
   gint i ;
 
-  for ( i = 0 ; source_functions[i] != NULL ; i += 2 ) {
+  for ( i = 0 ; source_functions[i] != NULL ; i += SOURCE_FUNCTION_SIZE ) {
     if ( strcmp((char *)source_functions[i], str) == 0 ) {
       return source_functions[i+1] ;
     }
   }
   
   return NULL ;
+}
+
+static void list_source_functions(FILE *f)
+
+{
+  gint i ;
+
+  fprintf(f, "%s: available source functions\n\n", progname) ;
+
+  fprintf(f, "Supply arguments using the -p option; optional arguments are\n"
+	  "in square brackets\n\n") ;
+  
+  for ( i = 0 ; source_functions[i] != NULL ; i += SOURCE_FUNCTION_SIZE ) {
+    fprintf(f, "  %s%s\n",
+	    (char *)source_functions[i+0],
+	    (char *)source_functions[i+2]) ;
+  }
+
+  return ;
 }
 
 static gint grid_limits(gdouble *wt, gdouble xmin, gdouble ymin, gdouble zmin,
@@ -234,11 +280,16 @@ gint main(gint argc, char **argv)
   rfile = NULL ;
   
   ngfunc = 0 ;
-  while ( (ch = getopt(argc, argv, "a:f:g:p:r:s:t:")) != EOF ) {
+  while ( (ch = getopt(argc, argv, "ha:Ff:g:p:r:s:t:")) != EOF ) {
     switch ( ch ) {
     default: g_assert_not_reached() ; break ;
+    case 'h':
+      print_help_text(stderr, al, gtol, sg, tol) ;
+      return 0 ;
+      break ;
     case 'a': al = atof(optarg) ; break ;
     case 'g': gtol = atof(optarg) ; break ;
+    case 'F': list_source_functions(stderr) ; return 0 ; break ;
     case 'f':
       gfuncs[ngfunc] = parse_func(optarg) ;
       if ( gfuncs[ngfunc] == NULL ) {

@@ -2,5 +2,6 @@
 
 # threaded kernel correction after FMM calculation
 
-# use FMM tree to find other points within kernel cutoff range
+# use FMM tree to find other points within kernel cutoff range for
+# velocity and velocity gradient corrections
 
