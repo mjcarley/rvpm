@@ -72,7 +72,7 @@ static void file_close(FILE *f)
   return ;
 }
 
-static void print_help_text(FILE *f)
+static void print_help_text(FILE *f, gdouble gcrop)
 
 {
   fprintf(f,
@@ -82,12 +82,14 @@ static void print_help_text(FILE *f)
 	  "Options:\n\n"
 	  "  -h print this message and exit\n"
 	  "  -d (vorticity distribution filename)\n"
+	  "  -g # vorticity cutoff for grid cropping (%lg)\n"
 	  "  -M # number of radial Gauss quadrature points in streamfunction\n"
 	  "       evaluation\n"
 	  "  -N # number of angular Gauss quadrature points in streamfunction\n"
 	  "       evaluation\n"
 	  "  -v (file of field points for evaluation of velocity and "
-	  "vorticity)\n") ;
+	  "vorticity)\n",
+	  gcrop) ;
   
   return ;
 }
@@ -114,6 +116,7 @@ gint main(gint argc, char **argv)
   gs = gt = NULL ;
   ngs = ngt = 32 ;
   d = NULL ;
+  gcrop = 1e-6 ;
   
   r0 = 0.9 ; z0 = 0.0 ; sigma = 0.1 ; G = 1.0 ;
 
@@ -126,14 +129,15 @@ gint main(gint argc, char **argv)
   /* rvpm_solver_model_parameter_f(&solver) = 0.0 ; */
   /* rvpm_solver_model_parameter_g(&solver) = 1/5.0 ; */
   
-  while ( (ch = getopt(argc, argv, "hd:M:N:v:")) != EOF ) {
+  while ( (ch = getopt(argc, argv, "hd:g:M:N:v:")) != EOF ) {
     switch ( ch ) {
     default: g_assert_not_reached() ; break ;
     case 'h':
-      print_help_text(stderr) ;
+      print_help_text(stderr, gcrop) ;
       return 0 ;
       break ;
     case 'd': dfile = g_strdup(optarg) ; break ;
+    case 'g': gcrop = atof(optarg) ; break ;
     case 'M': ngs = atoi(optarg) ; break ;
     case 'N': ngt = atoi(optarg) ; break ;
     case 'v': vfile = g_strdup(optarg) ; break ;
@@ -228,15 +232,13 @@ gint main(gint argc, char **argv)
     return 0 ;
   }
 
-  ngs = 64 ; ngt = 64 ;
+  /* ngs = 64 ; ngt = 64 ; */
 
   c = rvpm_distribution_origin(d) ;
   D = rvpm_distribution_width(d) ;
   limits[0] = c[0] ; limits[1] = c[0] + D ;
   limits[2] = c[1] ; limits[3] = c[1] + D ;
   limits[4] = c[2] ; limits[5] = c[2] + D ;
-
-  gcrop = 1e-6 ;
 
   rvpm_distribution_limits_crop(d, gcrop, limits) ;
   
