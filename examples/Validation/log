@@ -1,0 +1,23 @@
+rvpm-grid: initial domain:
+    -1.79724 1.79724
+    -1.79724 1.79724
+    -0.797237 0.797237
+rvpm-grid: adjusted domain:
+    -1.96044 1.99716 (98)
+    -1.96044 1.99716 (98)
+    -1.98044 1.97716 (98)
+rvpm-grid: evaluating vorticity on grid [0.110989]
+rvpm-grid: fitting Gaussian RBFs [0.091297]
+rvpm-grid: 29908 source nodes above threshold (0.01)
+rvpm-grid: active domain:
+    -1.30764 1.30356
+    -1.30764 1.30356
+    -0.307637 0.304363
+step: 1
+rvpm-solve -n 8 -d 0.0025 -G -v 1.3e-4 -T 4 -D 5 -L 14
+rvpm-solve: particle distribution read
+rvpm-solve: 29908 particles
+setting up FMM tree
+rvpm-solve: starting solve for 8 steps
+rvpm-solve: time step 0 [0]
+time_step: tree dimensions: -1.31764 -1.31764 -0.317637 2.6312

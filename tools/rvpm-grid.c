@@ -118,7 +118,7 @@ gint vortex_ring(gdouble *x, gdouble *p, gint np, gdouble *w, gboolean limits)
     /*treat the first entry of w as a tolerance to be used in finding
       the limits of the grid box*/
     ee = w[0] ;
-    r = sqrt(-s*s*log(ee/w0)) ;
+    r = sqrt(-s*s*log(ee/fabs(w0))) ;
     x[0] = -r0 - r ; x[1] =  r0 + r ;
     x[2] = -r0 - r ; x[3] =  r0 + r ;
     x[4] =  z0 - r ; x[5] =  z0 + r ;

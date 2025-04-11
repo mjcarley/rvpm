@@ -336,7 +336,8 @@ static void tree_test(rvpm_kernel_t kernel, gint np)
 
 {
   gdouble *f, s, *work, *wt, x[3], *om, *y, zeta, reg ;
-  gdouble r0, s0, sc, limits[6], h, tol, t0, al, gtol, u[12] ;
+  gdouble r0, s0, sc, limits[6], h, tol, t0, al, gtol, uv[12], ut[12] ;
+  gdouble err[12] = {0} ;
   grbf_workspace_t *ws ;
   rvpm_distribution_t *d ;
   rvpm_tree_t *tree ;
@@ -448,19 +449,30 @@ static void tree_test(rvpm_kernel_t kernel, gint np)
     x[0] = r0 ; x[2] = s0*0.5 ;
     x[1] = tree->origin[1] + 1e-2 + (tree->D-2.0*1e-2)*i/1000 ;
     
-    memset(u, 0, 12*sizeof(gdouble)) ;
+    memset(uv, 0, 12*sizeof(gdouble)) ;
     rvpm_vorticity_velocity_gradient(d, reg,
 					   kernel,
-					   x, u, &(u[3])) ;
+					   x, uv, &(uv[3])) ;
     fprintf(stdout, "%1.16e %1.16e %1.16e", x[0], x[1], x[2]) ;
-    for ( j = 0 ; j < 12 ; j ++ ) fprintf(stdout, " %1.16e", u[j]) ;
-    memset(u, 0, 12*sizeof(gdouble)) ;
+    for ( j = 0 ; j < 12 ; j ++ ) fprintf(stdout, " %1.16e", uv[j]) ;
+    memset(ut, 0, 12*sizeof(gdouble)) ;
     rvpm_tree_velocity_gradient(tree, reg,
 				      kernel,
-				      x, u, &(u[3]), work) ;
-    for ( j = 0 ; j < 12 ; j ++ ) fprintf(stdout, " %1.16e", u[j]) ;    
+				      x, ut, &(ut[3]), work) ;
+    for ( j = 0 ; j < 12 ; j ++ ) fprintf(stdout, " %1.16e", ut[j]) ;
     fprintf(stdout, "\n") ;
+
+    for ( j = 0 ; j < 12 ; j ++ ) {
+      err[j] = MAX(err[j], fabs(ut[j]-uv[j])) ;
+    }    
   }
+
+  fprintf(stderr, "errors:") ;
+  for ( j = 0 ; j < 12 ; j ++ ) {
+    fprintf(stderr, " %e", err[j]) ;
+  }
+
+  fprintf(stderr, "\n") ;
   
   return ;
 }
