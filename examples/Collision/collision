@@ -45,8 +45,7 @@ ${BIN}/rvpm-grid \
 cp collision.dat input.dat
 ## time step
 ##dt=0.00625
-##for (( i=1; i<=${nsteps} ; i++ )) do
-for (( i=1; i<0 ; i++ )) do
+for (( i=1; i<=${nsteps} ; i++ )) do
     echo step: $i
     opts="-n ${substeps} -d ${dt} ${kernel} -v ${nu} -T ${nthreads} -D ${depth} -L ${order}"
     echo rvpm-solve ${opts}
