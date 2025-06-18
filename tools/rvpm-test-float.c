@@ -32,6 +32,15 @@
 GTimer *timer ;
 
 char *progname ;
+  char *tests[] = {
+    "gauss_fit",
+    "permutation",
+    "tree",
+    "solver",
+    "kernel_gradient",
+    "stream_function",
+    "stream_function_velocity",
+    "time_step", NULL} ;
 
 static FILE *file_open(char *file, char *mode,
 		       char *file_default, FILE *fdefault)
@@ -66,9 +75,6 @@ static void file_close(FILE *f)
 static gint parse_test(char *str)
 
 {
-  char *tests[] = {"gauss_fit", "permutation", "tree", "solver",
-    "kernel_gradient", "stream_function", "stream_function_velocity",
-    "time_step", NULL} ;
   gint i ;
 
   for ( i = 0 ; tests[i] != NULL ; i ++ ) {

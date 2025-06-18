@@ -427,9 +427,16 @@ gint RVPM_FUNCTION_NAME(rvpm_vorticity_velocity_gradient)(rvpm_distribution_t *v
       y = (RVPM_REAL *)rvpm_distribution_particle(v,i) ;
       w = (RVPM_REAL *)rvpm_distribution_vorticity(v,i) ;
       s = *((RVPM_REAL *)rvpm_distribution_particle_radius(v,i)) ;
-      kernel_GS(x, y, s, K) ;
+      RVPM_FUNCTION_NAME(rvpm_kernel_GS)(x, y, e, K, dK) ;
       rvpm_vector_cross(KxW,K,w) ;
-      u[0] += KxW[0] ; u[1] += KxW[1] ; u[2] += KxW[2] ;
+      u[0] += KxW[0] ; u[1] += KxW[1] ; u[2] += KxW[2] ; 
+      rvpm_vector_cross_gradient(KxW,dK,w) ;
+      du[0] += KxW[0] ; du[1] += KxW[1] ; du[2] += KxW[2] ; 
+      du[3] += KxW[3] ; du[4] += KxW[4] ; du[5] += KxW[5] ; 
+      du[6] += KxW[6] ; du[7] += KxW[7] ; du[8] += KxW[8] ; 
+      /* kernel_GS(x, y, s, K) ; */
+      /* rvpm_vector_cross(KxW,K,w) ; */
+      /* u[0] += KxW[0] ; u[1] += KxW[1] ; u[2] += KxW[2] ; */
     }
 
     return 0 ;

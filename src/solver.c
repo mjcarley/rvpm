@@ -112,7 +112,7 @@ gint RVPM_FUNCTION_NAME(rvpm_solver_coefficients)(rvpm_time_step_t s,
 						  gint *n, gint *p)
 
 {
-  RVPM_REAL al[4], wt[4], bt ;
+  RVPM_REAL al[4]={0}, wt[4]={0}, bt=0 ;
   
   switch ( s ) {
   default: g_error("%s: unhandled time step %u", __FUNCTION__, s) ;
