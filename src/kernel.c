@@ -204,7 +204,7 @@ static void kernel_GS(RVPM_REAL *x, RVPM_REAL *y,
 
   g = erf(R/s) - M_2_SQRTPI*R/s*exp(-R2/s/s) ;
 
-  if ( R > 1e-9 ) {
+  if ( R > 1e-6 ) {
     K[0] *= g ; K[1] *= g ; K[2] *= g ; 
 
     return ;
@@ -254,7 +254,7 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
 					RVPM_REAL *K, RVPM_REAL *dK)
 
 {
-  RVPM_REAL R, R2, R3, R5, r[3], dk[9], dg[3], g, cutoff, E, errfunc ;
+  RVPM_REAL R, R2, R3, R5, r[3], k[3], dk[9], dg[3], g, cutoff, E, errfunc ;
   gint i, j ;
 
   /*argument at which g(R/\sigma) reaches machine precision*/
@@ -270,7 +270,22 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
   R2 = rvpm_vector_scalar(r,r) ;
   R  = SQRT(R2) ;
 
-  if ( R < 1e-9 ) return 0 ;
+  if ( R < 1e-6 ) {
+    E = EXP(-R2/s/s) ;
+    K[0] = -r[0]*E*0.5*M_1_PI*M_2_SQRTPI/s/s/s/3.0 ;
+    K[1] = -r[1]*E*0.5*M_1_PI*M_2_SQRTPI/s/s/s/3.0 ;
+    K[2] = -r[2]*E*0.5*M_1_PI*M_2_SQRTPI/s/s/s/3.0 ;
+
+    if ( dK != NULL ) {
+      memset(dK, 0, 9*sizeof(RVPM_REAL)) ;
+
+      dK[0] = -M_1_PI*M_2_SQRTPI*0.5/3.0/s/s/s ;
+      dK[4] = -M_1_PI*M_2_SQRTPI*0.5/3.0/s/s/s ;
+      dK[8] = -M_1_PI*M_2_SQRTPI*0.5/3.0/s/s/s ;
+    }
+
+    return 0 ;
+  }
   
   R3 = R*R2 ;
 
@@ -284,11 +299,13 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
     g = errfunc - M_2_SQRTPI*R/s*E ;
   }
 
-  /* if ( R > 1e-9 ) { */
-  K[0] = -g*r[0]/R3*0.25*M_1_PI ;
-  K[1] = -g*r[1]/R3*0.25*M_1_PI ;
-  K[2] = -g*r[2]/R3*0.25*M_1_PI ;
-  /* } */
+  k[0] = -r[0]/R3*0.25*M_1_PI ;
+  k[1] = -r[1]/R3*0.25*M_1_PI ;
+  k[2] = -r[2]/R3*0.25*M_1_PI ;
+
+  K[0] = g*k[0] ;
+  K[1] = g*k[1] ;
+  K[2] = g*k[2] ;
   
   if ( dK == NULL ) return 0 ;
 
@@ -321,7 +338,7 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
   for ( i = 0 ; i < 3 ; i ++ ) {
     for ( j = 0 ; j < 3 ; j ++ ) {
       dK[3*i+j]  = -0.25*M_1_PI*g*dk[3*i+j] ;
-      dK[3*i+j] += K[j]*dg[i] ;
+      dK[3*i+j] += k[j]*dg[i] ;
     }
   }
   
@@ -415,6 +432,9 @@ gint RVPM_FUNCTION_NAME(rvpm_vorticity_velocity_gradient)(rvpm_distribution_t *v
       s = *((RVPM_REAL *)rvpm_distribution_particle_radius(v,i)) ;
       kernel_GS(x, y, s, K) ;
       rvpm_vector_cross(KxW,K,w) ;
+      if ( fabs(KxW[0]) > 100 ) {
+	g_error("blow up") ;
+      }
       u[0] += KxW[0] ; u[1] += KxW[1] ; u[2] += KxW[2] ;
     }
 
@@ -427,8 +447,9 @@ gint RVPM_FUNCTION_NAME(rvpm_vorticity_velocity_gradient)(rvpm_distribution_t *v
       y = (RVPM_REAL *)rvpm_distribution_particle(v,i) ;
       w = (RVPM_REAL *)rvpm_distribution_vorticity(v,i) ;
       s = *((RVPM_REAL *)rvpm_distribution_particle_radius(v,i)) ;
-      RVPM_FUNCTION_NAME(rvpm_kernel_GS)(x, y, e, K, dK) ;
+      RVPM_FUNCTION_NAME(rvpm_kernel_GS)(x, y, s, K, dK) ;
       rvpm_vector_cross(KxW,K,w) ;
+      g_assert(fabs(KxW[0]) < 100) ;
       u[0] += KxW[0] ; u[1] += KxW[1] ; u[2] += KxW[2] ; 
       rvpm_vector_cross_gradient(KxW,dK,w) ;
       du[0] += KxW[0] ; du[1] += KxW[1] ; du[2] += KxW[2] ; 
@@ -485,7 +506,7 @@ gint RVPM_FUNCTION_NAME(rvpm_vorticity_derivatives)(RVPM_REAL *G, RVPM_REAL s,
   *ds = -(g + f)/(1.0 + 3*f)*tmp0*s/absG ;
 
   *ds += 2.0*nu/s ;
-  
+
   dG[0] = dG0[0] - (g + f)/(1/3.0+f)*dG1[0] ;
   dG[1] = dG0[1] - (g + f)/(1/3.0+f)*dG1[1] ;
   dG[2] = dG0[2] - (g + f)/(1/3.0+f)*dG1[2] ;

@@ -241,7 +241,8 @@ static void kernel_bare(RVPM_REAL *x, RVPM_REAL *y, RVPM_REAL *K)
   R2 = rvpm_vector_scalar(r,r) ;
   R  = SQRT(R2) ;
 
-  if ( R < 1e-9 ) return ;
+  if ( R < WBFMM_LOCAL_CUTOFF_RADIUS ) return ;
+  /* if ( R < 1e-9 ) return ; */
 
   R3 = R2*R ;
 
@@ -273,7 +274,8 @@ static void kernel_gradient_bare(RVPM_REAL *x, RVPM_REAL *y,
   R2 = rvpm_vector_scalar(r,r) ;
   R  = SQRT(R2) ;
 
-  if ( R < 1e-9 ) return ;
+  if ( R < WBFMM_LOCAL_CUTOFF_RADIUS ) return ;
+  /* if ( R < 1e-9 ) return ; */
 
   R3 = R2*R ;
 
@@ -326,13 +328,15 @@ static void box_curl_correct_WL(wbfmm_tree_t *t,gint i0, gint i1,
 
 {
   gint idx, j ;
-  RVPM_REAL *xs, K[3], u[3], s ;
+  RVPM_REAL *xs, K[3], K0[3], u[3], s ;
 
   for ( j = i0 ; j < i1 ; j ++ ) {
     idx = t->ip[j] ;
     xs = wbfmm_tree_point_index(t, idx) ;
     s = sig[idx*sigstr] ;
+    kernel_bare(x, xs, K0) ;
     RVPM_FUNCTION_NAME(rvpm_kernel_WL)(x, xs, s, K, NULL) ;
+    correct_kernel(K, K0) ;
     rvpm_vector_cross(u,K,&(src[idx*sstr])) ;
     f[0] += u[0] ; f[1] += u[1] ; f[2] += u[2] ; 
   }
@@ -349,14 +353,16 @@ static void box_curl_gradient_correct_WL(wbfmm_tree_t *t,
 
 {
   gint idx, j ;
-  RVPM_REAL *xs, K[12], u[12], *w, s ;
+  RVPM_REAL *xs, K0[12], K[12], u[12], *w, s ;
 
   for ( j = i0 ; j < i1 ; j ++ ) {
     idx = t->ip[j] ;
     xs = wbfmm_tree_point_index(t, idx) ;
     s = sig[idx*sigstr] ;
     w = &(src[idx*sstr]) ;
+    kernel_gradient_bare(x, xs, K0, &(K0[3])) ;
     RVPM_FUNCTION_NAME(rvpm_kernel_WL)(x, xs, s, K, &(K[3])) ;
+    correct_gradient_kernel(K, K0, &(K[3]), &(K0[3])) ;
     rvpm_vector_cross(u,K,w) ;
     f[0] += u[0] ; f[1] += u[1] ; f[2] += u[2] ; 
     rvpm_vector_cross_gradient(u,&(K[3]),w) ;
@@ -375,13 +381,15 @@ static void box_curl_correct_MR(wbfmm_tree_t *t,gint i0, gint i1,
 
 {
   gint idx, j ;
-  RVPM_REAL *xs, K[3], u[3], s ;
+  RVPM_REAL *xs, K[3], K0[3], u[3], s ;
 
   for ( j = i0 ; j < i1 ; j ++ ) {
     idx = t->ip[j] ;
     xs = wbfmm_tree_point_index(t, idx) ;
     s = sig[idx*sigstr] ;
+    kernel_bare(x, xs, K0) ;
     RVPM_FUNCTION_NAME(rvpm_kernel_MR)(x, xs, s, K, NULL) ;
+    correct_kernel(K, K0) ;
     rvpm_vector_cross(u,K,&(src[idx*sstr])) ;
     f[0] += u[0] ; f[1] += u[1] ; f[2] += u[2] ; 
   }
@@ -398,14 +406,16 @@ static void box_curl_gradient_correct_MR(wbfmm_tree_t *t,
 
 {
   gint idx, j ;
-  RVPM_REAL *xs, K[12], u[12], *w, s ;
+  RVPM_REAL *xs, K0[12], K[12], u[12], *w, s ;
 
   for ( j = i0 ; j < i1 ; j ++ ) {
     idx = t->ip[j] ;
     xs = wbfmm_tree_point_index(t, idx) ;
     w = &(src[idx*sstr]) ;
     s = sig[idx*sigstr] ;
+    kernel_gradient_bare(x, xs, K0, &(K0[3])) ;
     RVPM_FUNCTION_NAME(rvpm_kernel_MR)(x, xs, s, K, &(K[3])) ;
+    correct_gradient_kernel(K, K0, &(K[3]), &(K0[3])) ;
     rvpm_vector_cross(u,K,w) ;
     f[0] += u[0] ; f[1] += u[1] ; f[2] += u[2] ; 
     rvpm_vector_cross_gradient(u,&(K[3]),w) ;
@@ -461,9 +471,9 @@ static void box_curl_gradient_correct_GS(wbfmm_tree_t *t,gint i0, gint i1,
     rvpm_vector_cross(u,K,w) ;
     f[0] += u[0] ; f[1] += u[1] ; f[2] += u[2] ; 
     rvpm_vector_cross_gradient(u,&(K[3]),w) ;
-    df[0] += u[0] ; df[1] += u[1] ; df[2] += u[2] ; 
-    df[3] += u[3] ; df[4] += u[4] ; df[5] += u[5] ; 
-    df[6] += u[6] ; df[7] += u[7] ; df[8] += u[8] ; 
+    df[0] += u[0] ; df[1] += u[1] ; df[2] += u[2] ;
+    df[3] += u[3] ; df[4] += u[4] ; df[5] += u[5] ;
+    df[6] += u[6] ; df[7] += u[7] ; df[8] += u[8] ;
   }
 
   return ;
@@ -533,12 +543,11 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_velocity_gradient)(rvpm_tree_t *t,
   switch ( kernel ) {
   default: g_assert_not_reached() ; break ;
   case RVPM_KERNEL_WINCKELMANS_LEONARD:
-    g_assert_not_reached() ;
+    /* g_assert_not_reached() ; */
     correction_func = box_curl_gradient_correct_WL ;
     sig = &reg ; sigstr = 0 ; 
     break ;
   case RVPM_KERNEL_MOORE_ROSENHEAD:
-    g_assert_not_reached() ;
     correction_func = box_curl_gradient_correct_MR ;
     sig = &reg ; sigstr = 0 ; 
     break ;
@@ -604,12 +613,11 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_velocity)(rvpm_tree_t *t, RVPM_REAL reg,
   switch ( kernel ) {
   default: g_assert_not_reached() ; break ;
   case RVPM_KERNEL_WINCKELMANS_LEONARD:
-    g_assert_not_reached() ;
+    /* g_assert_not_reached() ; */
     correction_func = box_curl_correct_WL ;
     sig = &reg ; sigstr = 0 ; 
     break ;
   case RVPM_KERNEL_MOORE_ROSENHEAD:
-    g_assert_not_reached() ;
     correction_func = box_curl_correct_MR ;
     sig = &reg ; sigstr = 0 ; 
     break ;

@@ -17,15 +17,15 @@ old_library='libsub.a'
 inherited_linker_flags=' -fopenmp'
 
 # Libraries that this one depends upon.
-dependency_libs=' -L/home/michael/Codes/lib /home/michael/Codes/lib/libgrbf.la -L/usr/lib64/gcc/x86_64-slackware-linux/11.2.0 -L/usr/lib64/gcc/x86_64-slackware-linux/11.2.0/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/usr/lib64/gcc/x86_64-slackware-linux/11.2.0/../../.. -lfftw3 -lfftw3f /home/michael/Codes/lib/libwbfmm.la -L/home/michael/Codes/lib64 /home/michael/Codes/lib/libgqr.la -lblas -lgsl -lgslcblas -lglib-2.0 -lgfortran -lm -lquadmath'
+dependency_libs=' -L/home/michael/Codes/lib /home/michael/Codes/lib/libgrbf.la -L/usr/lib64/gcc/x86_64-slackware-linux/11.2.0 -L/usr/lib64/gcc/x86_64-slackware-linux/11.2.0/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/usr/lib64/gcc/x86_64-slackware-linux/11.2.0/../../.. -lfftw3 -lfftw3f /home/michael/Codes/lib/libwbfmm.la -L/home/michael/Codes/lib64 /home/michael/Codes/lib/libgqr.la -lblas -lgsl -lgslcblas -lglib-2.0 /home/michael/Codes/lib/libmatheval.la -lfl -lgfortran -lm -lquadmath'
 
 # Names of additional weak libraries provided by this library
 weak_library_names=''
 
 # Version information for libsub.
-current=2
+current=1
 age=0
-revision=1
+revision=0
 
 # Is this an already installed library?
 installed=no
