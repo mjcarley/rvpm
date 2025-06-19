@@ -255,6 +255,9 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
 
 {
   RVPM_REAL R, R2, R3, R5, r[3], k[3], dk[9], dg[3], g, cutoff, E, errfunc ;
+  RVPM_REAL s3 ;
+  const RVPM_REAL m_1_sqrtpi_3 = 0.5*M_1_PI*M_2_SQRTPI ;
+  const RVPM_REAL m_1_4pi = 0.25*M_1_PI ;
   gint i, j ;
 
   /*argument at which g(R/\sigma) reaches machine precision*/
@@ -270,18 +273,20 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
   R2 = rvpm_vector_scalar(r,r) ;
   R  = SQRT(R2) ;
 
+  s3 = s*s*s ;
   if ( R < 1e-6 ) {
+    /*use series expansion at small R*/
     E = EXP(-R2/s/s) ;
-    K[0] = -r[0]*E*0.5*M_1_PI*M_2_SQRTPI/s/s/s/3.0 ;
-    K[1] = -r[1]*E*0.5*M_1_PI*M_2_SQRTPI/s/s/s/3.0 ;
-    K[2] = -r[2]*E*0.5*M_1_PI*M_2_SQRTPI/s/s/s/3.0 ;
+    K[0] = -r[0]*E*m_1_sqrtpi_3/s3/3.0 ;
+    K[1] = -r[1]*E*m_1_sqrtpi_3/s3/3.0 ;
+    K[2] = -r[2]*E*m_1_sqrtpi_3/s3/3.0 ;
 
     if ( dK != NULL ) {
       memset(dK, 0, 9*sizeof(RVPM_REAL)) ;
-
-      dK[0] = -M_1_PI*M_2_SQRTPI*0.5/3.0/s/s/s ;
-      dK[4] = -M_1_PI*M_2_SQRTPI*0.5/3.0/s/s/s ;
-      dK[8] = -M_1_PI*M_2_SQRTPI*0.5/3.0/s/s/s ;
+      /* fprintf(stderr, "hello\n") ; */
+      dK[0] = -m_1_sqrtpi_3/3.0/s3 + 2.0*E/3.0*m_1_sqrtpi_3/s3/s/s*r[0]*r[0] ;
+      dK[4] = -m_1_sqrtpi_3/3.0/s3 + 2.0*E/3.0*m_1_sqrtpi_3/s3/s/s*r[1]*r[1] ;
+      dK[8] = -m_1_sqrtpi_3/3.0/s3 + 2.0*E/3.0*m_1_sqrtpi_3/s3/s/s*r[2]*r[2] ;
     }
 
     return 0 ;
@@ -299,9 +304,9 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
     g = errfunc - M_2_SQRTPI*R/s*E ;
   }
 
-  k[0] = -r[0]/R3*0.25*M_1_PI ;
-  k[1] = -r[1]/R3*0.25*M_1_PI ;
-  k[2] = -r[2]/R3*0.25*M_1_PI ;
+  k[0] = -r[0]/R3*m_1_4pi ;
+  k[1] = -r[1]/R3*m_1_4pi ;
+  k[2] = -r[2]/R3*m_1_4pi ;
 
   K[0] = g*k[0] ;
   K[1] = g*k[1] ;
@@ -312,33 +317,28 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
   R5 = R3*R2 ;
   
   /*dK/dx*/
-  dk[0] = -3.0*r[0]*r[0]/R5 + 1.0/R3 ;
-  dk[1] = -3.0*r[1]*r[0]/R5 ;
-  dk[2] = -3.0*r[2]*r[0]/R5 ;
+  dk[0] = -m_1_4pi*(-3.0*r[0]*r[0]/R5 + 1.0/R3) ;
+  dk[1] = -m_1_4pi*(-3.0*r[1]*r[0]/R5) ;
+  dk[2] = -m_1_4pi*(-3.0*r[2]*r[0]/R5) ;
   /*dk/dy*/
   /* dk[3] = -3.0*r[0]*r[1]/R5 ; */
   dk[3] = dk[1] ;
-  dk[4] = -3.0*r[1]*r[1]/R5 + 1.0/R3 ;
-  dk[5] = -3.0*r[2]*r[1]/R5 ;
+  dk[4] = -m_1_4pi*(-3.0*r[1]*r[1]/R5 + 1.0/R3) ;
+  dk[5] = -m_1_4pi*(-3.0*r[2]*r[1]/R5) ;
   /*dk/dz*/
   /* dk[6] = -3.0*r[0]*r[2]/R5 ; */
   dk[6] = dk[2] ;
   /* dk[7] = -3.0*r[1]*r[2]/R5 ; */
   dk[7] = dk[5] ;
-  dk[8] = -3.0*r[2]*r[2]/R5 + 1.0/R3 ;
+  dk[8] = -m_1_4pi*(-3.0*r[2]*r[2]/R5 + 1.0/R3) ;
 
-  /* M_2_SQRTPI*R/s*E ; */
-  /* dg[0] = 4.0*r[0]/SQRT(M_PI)/s/s/s*R*E ; */
-  /* dg[1] = 4.0*r[1]/SQRT(M_PI)/s/s/s*R*E ; */
-  /* dg[2] = 4.0*r[2]/SQRT(M_PI)/s/s/s*R*E ; */
-  dg[0] = 2.0*M_2_SQRTPI*R/s*E*r[0]/s/s ;
-  dg[1] = 2.0*M_2_SQRTPI*R/s*E*r[1]/s/s ;
-  dg[2] = 2.0*M_2_SQRTPI*R/s*E*r[2]/s/s ;
+  dg[0] = 2.0*M_2_SQRTPI*R*E*r[0]/s3 ;
+  dg[1] = 2.0*M_2_SQRTPI*R*E*r[1]/s3 ;
+  dg[2] = 2.0*M_2_SQRTPI*R*E*r[2]/s3 ;
 
   for ( i = 0 ; i < 3 ; i ++ ) {
     for ( j = 0 ; j < 3 ; j ++ ) {
-      dK[3*i+j]  = -0.25*M_1_PI*g*dk[3*i+j] ;
-      dK[3*i+j] += k[j]*dg[i] ;
+      dK[3*i+j] = g*dk[3*i+j] + k[j]*dg[i] ;
     }
   }
   

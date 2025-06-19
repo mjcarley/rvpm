@@ -719,7 +719,7 @@ static void kernel_gradient_test(rvpm_kernel_t kernel)
   rvpm_kernel_func_t kfunc ;
   gint i ;
   
-  ee = 1e-9 ; s = 5e-1 ;
+  ee = 1e-9 ; s = 5e-3 ;
 
   fprintf(stderr, "kernel gradient test\n") ;
   fprintf(stderr, "====================\n") ;
@@ -729,7 +729,7 @@ static void kernel_gradient_test(rvpm_kernel_t kernel)
     source point to engage all terms in the analytical evaluation of
     the gradient (see the Gaussian smoothed kernel for example)*/
   dy[0] = 2.7*s ; dy[1] = -0.3*s ; dy[2] = 1.9*s ;
-  /* dy[0] = 2.7e-2*s ; dy[1] = -0.3e-2*s ; dy[2] = 1.9e-2*s ; */
+  dy[0] = 2.7e-3*s ; dy[1] = -0.3e-3*s ; dy[2] = 1.9e-3*s ;
   /* dy[2] = 1*s ; dy[1] = 1*s ; dy[0] = 1*s ; */
   dy[0] = dy[1] = dy[2] = 0.0 ;
   
