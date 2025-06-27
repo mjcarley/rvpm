@@ -450,6 +450,119 @@ static void box_curl_correct_GS(wbfmm_tree_t *t,gint i0, gint i1,
   return ;
 }
 
+#if 0
+static void kernel_correction_GS(RVPM_REAL *x, RVPM_REAL *y,
+				 RVPM_REAL s,
+				 RVPM_REAL *K, RVPM_REAL *dK)
+
+{
+  RVPM_REAL R, R2, R3, R5, r[3], k[3], dk[9], dg[3], g, cutoff, E, errfunc ;
+  RVPM_REAL s3, Kb[3], dKb[9] ;
+  const RVPM_REAL m_1_sqrtpi_3 = 0.5*M_1_PI*M_2_SQRTPI ;
+  const RVPM_REAL m_1_4pi = 0.25*M_1_PI ;
+  gint i, j ;
+
+  /*argument at which g(R/\sigma) reaches machine precision*/
+#ifdef RVPM_SINGLE_PRECISION
+  cutoff = 4.2 ;
+#else /*RVPM_SINGLE_PRECISION*/
+  cutoff = 6.2 ;
+#endif /*RVPM_SINGLE_PRECISION*/
+  
+  memset( K, 0, 3*sizeof(RVPM_REAL)) ;
+  memset(dK, 0, 9*sizeof(RVPM_REAL)) ;
+  
+  rvpm_vector_diff(r,x,y) ;
+  R2 = rvpm_vector_scalar(r,r) ;
+  R  = SQRT(R2) ;
+
+  if ( R > cutoff*s ) return  ;
+  
+  s3 = s*s*s ;
+  if ( R2 < 1e-12 ) {
+    /*use series expansion at small R*/
+    E = EXP(-R2/s/s) ;
+    K[0] = -r[0]*E*m_1_sqrtpi_3/s3/3.0 ;
+    K[1] = -r[1]*E*m_1_sqrtpi_3/s3/3.0 ;
+    K[2] = -r[2]*E*m_1_sqrtpi_3/s3/3.0 ;
+
+    dK[0] = -m_1_sqrtpi_3/3.0/s3 + 2.0*E/3.0*m_1_sqrtpi_3/s3/s/s*r[0]*r[0] ;
+    dK[4] = -m_1_sqrtpi_3/3.0/s3 + 2.0*E/3.0*m_1_sqrtpi_3/s3/s/s*r[1]*r[1] ;
+    dK[8] = -m_1_sqrtpi_3/3.0/s3 + 2.0*E/3.0*m_1_sqrtpi_3/s3/s/s*r[2]*r[2] ;
+
+    return ;
+  }
+  
+  R3 = R*R2 ;
+
+  Kb[0] = -r[0]/R3*0.25*M_1_PI ;
+  Kb[1] = -r[1]/R3*0.25*M_1_PI ;
+  Kb[2] = -r[2]/R3*0.25*M_1_PI ;
+  
+  E = EXP(-R2/s/s) ;
+  errfunc = ERF(R/s) ;
+  g = errfunc - M_2_SQRTPI*R/s*E ;
+
+  k[0] = -g*r[0]/R3*m_1_4pi ;
+  k[1] = -g*r[1]/R3*m_1_4pi ;
+  k[2] = -g*r[2]/R3*m_1_4pi ;
+
+  K[0] = g*k[0] - Kb[0] ;
+  K[1] = g*k[1] - Kb[1] ;
+  K[2] = g*k[2] - Kb[2] ;
+  
+  R5 = R3*R2 ;
+  
+  /*dK/dx*/
+  dKb[0] = -3.0*r[0]*r[0]/R5 + 1.0/R3 ;
+  dKb[1] = -3.0*r[1]*r[0]/R5 ;
+  dKb[2] = -3.0*r[2]*r[0]/R5 ;
+  /*dK/dy*/
+  /* dK[3] = -3.0*r[0]*r[1]/R5 ; */
+  dKb[3] = dKb[1] ;
+  dKb[4] = -3.0*r[1]*r[1]/R5 + 1.0/R3 ;
+  dKb[5] = -3.0*r[2]*r[1]/R5 ;
+  /*dK/dz*/
+  /* dK[6] = -3.0*r[0]*r[2]/R5 ; */
+  dKb[6] = dKb[2] ;
+  /* dK[7] = -3.0*r[1]*r[2]/R5 ; */
+  dKb[7] = dKb[5] ;
+  dKb[8] = -3.0*r[2]*r[2]/R5 + 1.0/R3 ;
+
+  for ( gint i = 0 ; i < 9 ; i ++ ) {
+    dKb[i] *= -0.25*M_1_PI ;
+  }
+
+  /*dK/dx*/
+  dk[0] = -m_1_4pi*(-3.0*r[0]*r[0]/R5 + 1.0/R3) ;
+  dk[1] = -m_1_4pi*(-3.0*r[1]*r[0]/R5) ;
+  dk[2] = -m_1_4pi*(-3.0*r[2]*r[0]/R5) ;
+  /*dk/dy*/
+  /* dk[3] = -3.0*r[0]*r[1]/R5 ; */
+  dk[3] = dk[1] ;
+  dk[4] = -m_1_4pi*(-3.0*r[1]*r[1]/R5 + 1.0/R3) ;
+  dk[5] = -m_1_4pi*(-3.0*r[2]*r[1]/R5) ;
+  /*dk/dz*/
+  /* dk[6] = -3.0*r[0]*r[2]/R5 ; */
+  dk[6] = dk[2] ;
+  /* dk[7] = -3.0*r[1]*r[2]/R5 ; */
+  dk[7] = dk[5] ;
+  dk[8] = -m_1_4pi*(-3.0*r[2]*r[2]/R5 + 1.0/R3) ;
+
+  dg[0] = 2.0*M_2_SQRTPI*R*E*r[0]/s3 ;
+  dg[1] = 2.0*M_2_SQRTPI*R*E*r[1]/s3 ;
+  dg[2] = 2.0*M_2_SQRTPI*R*E*r[2]/s3 ;
+
+  for ( i = 0 ; i < 3 ; i ++ ) {
+    for ( j = 0 ; j < 3 ; j ++ ) {
+      dK[3*i+j] = g*dk[3*i+j] + k[j]*dg[i] - dKb[3*i+j] ;
+    }
+  }
+
+  return ;
+}
+#endif
+
 static void box_curl_gradient_correct_GS(wbfmm_tree_t *t,gint i0, gint i1,
 					 RVPM_REAL *src, gint sstr,
 					 RVPM_REAL *sig, gint sigstr,
@@ -468,6 +581,7 @@ static void box_curl_gradient_correct_GS(wbfmm_tree_t *t,gint i0, gint i1,
     kernel_gradient_bare(x, xs, K0, &(K0[3])) ;
     RVPM_FUNCTION_NAME(rvpm_kernel_GS)(x, xs, s, K, &(K[3])) ;
     correct_gradient_kernel(K, K0, &(K[3]), &(K0[3])) ;
+    /* kernel_correction_GS(x, xs, s, K, &(K[3])) ; */
     rvpm_vector_cross(u,K,w) ;
     f[0] += u[0] ; f[1] += u[1] ; f[2] += u[2] ; 
     rvpm_vector_cross_gradient(u,&(K[3]),w) ;
@@ -532,7 +646,10 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_velocity_gradient)(rvpm_tree_t *t,
 					      TRUE, x, utmp, 1, work) ;
   u[0] = utmp[0] ; u[1] = utmp[1] ; u[2] = utmp[2] ;
   for ( i = 0 ; i < 9 ; i ++ ) du[i] = utmp[3+i] ;
+  /* for ( i = 0 ; i < 9 ; i ++ ) du[i] = 0.0 ; */
 
+  /* return 0 ; */
+  
   /*adjust for neighbours*/
   nnbr = wbfmm_box_neighbours(t->depth, b, neighbours) ;
   g_assert(nnbr >= 0 && nnbr < 28) ;
@@ -552,15 +669,15 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_velocity_gradient)(rvpm_tree_t *t,
     sig = &reg ; sigstr = 0 ; 
     break ;
   case RVPM_KERNEL_GAUSSIAN:
-    correction_func = box_curl_gradient_correct_GS ;
+    /* correction_func = box_curl_gradient_correct_GS ; */
     sig = (RVPM_REAL *)rvpm_distribution_particle_radius(d,0) ;
-    sigstr = sstr ; 
-    /* for ( i = 0 ; i < nnbr ; i ++ ) { */
-    /*   box = &(boxes[neighbours[i]]) ; */
-    /*   box_curl_gradient_correct_GS(t->t, box->i, box->i+box->n, src, */
-    /* 				   sstr, sig, sigstr, x, u, du) ; */
-    /* } */
-    /* return 0 ; */
+    sigstr = sstr ;
+    for ( i = 0 ; i < nnbr ; i ++ ) {
+      box = &(boxes[neighbours[i]]) ;
+      box_curl_gradient_correct_GS(t->t, box->i, box->i+box->n, src, sstr,
+				   sig, sigstr, x, u, du) ;
+    }
+    return 0 ;
     break ;
   }
   
@@ -703,7 +820,7 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_derivatives)(rvpm_tree_t *t,
     /*vortex stretching*/
     G = (RVPM_REAL *)rvpm_distribution_vorticity(t->d,i) ;
     dG = &(du[i*str+RVPM_DISTRIBUTION_PARTICLE_VORTICITY]) ;
-    ds = &(du[i*str+RVPM_DISTRIBUTION_PARTICLE_RADIUS]) ;
+    ds = &(du[i*str+RVPM_DISTRIBUTION_PARTICLE_RADIUS   ]) ;
 
     RVPM_FUNCTION_NAME(rvpm_vorticity_derivatives)(G, *s, f, g, nu,
 						   &(utmp[3]), dG0, &dsigt) ;

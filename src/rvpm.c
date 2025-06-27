@@ -62,7 +62,6 @@ gint RVPM_FUNCTION_NAME(rvpm_distribution_interleaved_to_contiguous)(rvpm_distri
   for ( i = 0 ; i < np*ne - 1 ; i ++ ) {
     /*convert from contiguous index to interleaved*/
     idx = (i - (i/np)*np)*ne + i/np ;
-    /* fprintf(stderr, "%d %d\n", i, idx) ; */
     while ( idx < i ) {
       idx = (idx - (idx/np)*np)*ne + idx/np ;
     }
@@ -101,13 +100,11 @@ gint RVPM_FUNCTION_NAME(rvpm_distribution_contiguous_to_interleaved)(rvpm_distri
     k = i-j*ne ;
     idx = k*np + j ;
     
-    /* fprintf(stderr, "%d %d\n", i, idx) ; */
     while ( idx < i ) {
       j = idx/ne ;
       /*element index*/
       k = idx-j*ne ;
       idx = k*np + j ;
-      /* idx = (idx - (idx/np)*np)*ne + idx/np ; */
     }
 
     tmp = data[i] ;
@@ -160,6 +157,48 @@ rvpm_distribution_t *RVPM_FUNCTION_NAME(rvpm_distribution_read_alloc)(FILE *f,
 				       limits[5] - limits[4])) ;
   
   return d ;
+}
+
+gint RVPM_FUNCTION_NAME(rvpm_distribution_read)(FILE *f, rvpm_distribution_t *d)
+
+{
+  RVPM_REAL limits[6], smax, *data ;
+  gdouble *c ;
+  gint np, i ;
+  
+  fscanf(f, "%d", &np) ;
+  if ( np > rvpm_distribution_particle_number_max(d) ) {
+    g_error("%s: not enough memory allocated (%d) for %d particles",
+	    __FUNCTION__, rvpm_distribution_particle_number_max(d), np) ;
+  }
+    
+#ifdef RVPM_SINGLE_PRECISION
+  for ( i = 0 ; i < 6 ; i ++ ) fscanf(f, "%g", &(limits[i])) ;
+  fscanf(f, "%g", &smax) ;
+#else /*RVPM_SINGLE_PRECISION*/
+  for ( i = 0 ; i < 6 ; i ++ ) fscanf(f, "%lg", &(limits[i])) ;
+  fscanf(f, "%lg", &smax) ;
+#endif /*RVPM_SINGLE_PRECISION*/
+
+  data = (RVPM_REAL *)rvpm_distribution_particle(d, 0) ;
+  
+  for ( i = 0 ; i < np*RVPM_DISTRIBUTION_PARTICLE_SIZE ; i ++ ) {
+#ifdef RVPM_SINGLE_PRECISION
+    fscanf(f, "%g", &(data[i])) ;
+#else /*RVPM_SINGLE_PRECISION*/
+    fscanf(f, "%lg", &(data[i])) ;
+#endif /*RVPM_SINGLE_PRECISION*/
+  }    
+
+  rvpm_distribution_particle_number(d) = np ;
+
+  c = rvpm_distribution_origin(d) ;
+  c[0] = limits[0] ; c[1] = limits[2] ; c[2] = limits[4] ;
+  rvpm_distribution_width(d) = MAX(limits[1] - limits[0],
+				   MAX(limits[3] - limits[2],
+				       limits[5] - limits[4])) ;
+  
+  return 0 ;
 }
 
 gint RVPM_FUNCTION_NAME(rvpm_distribution_particle_add)(rvpm_distribution_t *d,

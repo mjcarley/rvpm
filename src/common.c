@@ -57,7 +57,7 @@ static gint distribution_write(FILE *f, rvpm_distribution_t *d)
     limits[5] = MAX(x[2],limits[5]) ;
   }
 
-  fprintf(f, "%d %e %e %e %e %e %e %e\n",
+  fprintf(f, "%d %1.16e %1.16e %1.16e %1.16e %1.16e %1.16e %1.16e\n",
 	  rvpm_distribution_particle_number(d),
 	  limits[0], limits[1], limits[2], limits[3], limits[4], limits[5],
 	  smax) ;

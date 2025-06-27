@@ -129,6 +129,8 @@ gint rvpm_distribution_write(FILE *f, rvpm_distribution_t *d) ;
 gint rvpm_distribution_write_f(FILE *f, rvpm_distribution_t *d) ;
 rvpm_distribution_t *rvpm_distribution_read_alloc(FILE *f, gint n) ;
 rvpm_distribution_t *rvpm_distribution_read_alloc_f(FILE *f, gint n) ;
+gint rvpm_distribution_read(FILE *f, rvpm_distribution_t *d) ;
+gint rvpm_distribution_read_f(FILE *f, rvpm_distribution_t *d) ;
 gint rvpm_distribution_limits_crop(rvpm_distribution_t *d,
 				   gdouble gcrop, gdouble *limits) ;
 gint rvpm_distribution_limits_crop_f(rvpm_distribution_t *d,

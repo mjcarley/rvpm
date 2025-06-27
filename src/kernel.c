@@ -271,10 +271,9 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
   
   rvpm_vector_diff(r,x,y) ;
   R2 = rvpm_vector_scalar(r,r) ;
-  R  = SQRT(R2) ;
 
   s3 = s*s*s ;
-  if ( R < 1e-6 ) {
+  if ( R2 < 1e-12 ) {
     /*use series expansion at small R*/
     E = EXP(-R2/s/s) ;
     K[0] = -r[0]*E*m_1_sqrtpi_3/s3/3.0 ;
@@ -283,7 +282,6 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
 
     if ( dK != NULL ) {
       memset(dK, 0, 9*sizeof(RVPM_REAL)) ;
-      /* fprintf(stderr, "hello\n") ; */
       dK[0] = -m_1_sqrtpi_3/3.0/s3 + 2.0*E/3.0*m_1_sqrtpi_3/s3/s/s*r[0]*r[0] ;
       dK[4] = -m_1_sqrtpi_3/3.0/s3 + 2.0*E/3.0*m_1_sqrtpi_3/s3/s/s*r[1]*r[1] ;
       dK[8] = -m_1_sqrtpi_3/3.0/s3 + 2.0*E/3.0*m_1_sqrtpi_3/s3/s/s*r[2]*r[2] ;
@@ -292,9 +290,10 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
     return 0 ;
   }
   
+  R  = SQRT(R2) ;
   R3 = R*R2 ;
 
-  if ( R/s > cutoff ) {
+  if ( R > cutoff*s ) {
     g = 1 ;
     E = 0.0 ;
     errfunc = 1.0 ;
@@ -442,7 +441,6 @@ gint RVPM_FUNCTION_NAME(rvpm_vorticity_velocity_gradient)(rvpm_distribution_t *v
   }
 
   if ( kernel == RVPM_KERNEL_GAUSSIAN ) {
-    /* g_assert_not_reached() ; */
     for ( i = 0 ; i < rvpm_distribution_particle_number(v) ; i ++ ) {
       y = (RVPM_REAL *)rvpm_distribution_particle(v,i) ;
       w = (RVPM_REAL *)rvpm_distribution_vorticity(v,i) ;
@@ -455,9 +453,6 @@ gint RVPM_FUNCTION_NAME(rvpm_vorticity_velocity_gradient)(rvpm_distribution_t *v
       du[0] += KxW[0] ; du[1] += KxW[1] ; du[2] += KxW[2] ; 
       du[3] += KxW[3] ; du[4] += KxW[4] ; du[5] += KxW[5] ; 
       du[6] += KxW[6] ; du[7] += KxW[7] ; du[8] += KxW[8] ; 
-      /* kernel_GS(x, y, s, K) ; */
-      /* rvpm_vector_cross(KxW,K,w) ; */
-      /* u[0] += KxW[0] ; u[1] += KxW[1] ; u[2] += KxW[2] ; */
     }
 
     return 0 ;

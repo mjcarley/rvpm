@@ -719,7 +719,7 @@ static void kernel_gradient_test(rvpm_kernel_t kernel)
   rvpm_kernel_func_FLOAT_t kfunc ;
   gint i ;
   
-  ee = 1e-9 ; s = 5e-3 ;
+  ee = 1e-9 ; s = 5e-1 ;
 
   fprintf(stderr, "kernel gradient test\n") ;
   fprintf(stderr, "====================\n") ;
