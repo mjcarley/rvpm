@@ -450,7 +450,7 @@ static void box_curl_correct_GS(wbfmm_tree_t *t,gint i0, gint i1,
   return ;
 }
 
-#if 0
+#if 1
 static void kernel_correction_GS(RVPM_REAL *x, RVPM_REAL *y,
 				 RVPM_REAL s,
 				 RVPM_REAL *K, RVPM_REAL *dK)
@@ -578,10 +578,10 @@ static void box_curl_gradient_correct_GS(wbfmm_tree_t *t,gint i0, gint i1,
     xs = wbfmm_tree_point_index(t, idx) ;
     w = &(src[idx*sstr]) ;
     s = sig[idx*sigstr] ;
-    kernel_gradient_bare(x, xs, K0, &(K0[3])) ;
-    RVPM_FUNCTION_NAME(rvpm_kernel_GS)(x, xs, s, K, &(K[3])) ;
-    correct_gradient_kernel(K, K0, &(K[3]), &(K0[3])) ;
-    /* kernel_correction_GS(x, xs, s, K, &(K[3])) ; */
+    /* kernel_gradient_bare(x, xs, K0, &(K0[3])) ; */
+    /* RVPM_FUNCTION_NAME(rvpm_kernel_GS)(x, xs, s, K, &(K[3])) ; */
+    /* correct_gradient_kernel(K, K0, &(K[3]), &(K0[3])) ; */
+    kernel_correction_GS(x, xs, s, K, &(K[3])) ;
     rvpm_vector_cross(u,K,w) ;
     f[0] += u[0] ; f[1] += u[1] ; f[2] += u[2] ; 
     rvpm_vector_cross_gradient(u,&(K[3]),w) ;
@@ -646,9 +646,6 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_velocity_gradient)(rvpm_tree_t *t,
 					      TRUE, x, utmp, 1, work) ;
   u[0] = utmp[0] ; u[1] = utmp[1] ; u[2] = utmp[2] ;
   for ( i = 0 ; i < 9 ; i ++ ) du[i] = utmp[3+i] ;
-  /* for ( i = 0 ; i < 9 ; i ++ ) du[i] = 0.0 ; */
-
-  /* return 0 ; */
   
   /*adjust for neighbours*/
   nnbr = wbfmm_box_neighbours(t->depth, b, neighbours) ;

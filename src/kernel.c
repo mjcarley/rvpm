@@ -276,9 +276,12 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
   if ( R2 < 1e-12 ) {
     /*use series expansion at small R*/
     E = EXP(-R2/s/s) ;
-    K[0] = -r[0]*E*m_1_sqrtpi_3/s3/3.0 ;
-    K[1] = -r[1]*E*m_1_sqrtpi_3/s3/3.0 ;
-    K[2] = -r[2]*E*m_1_sqrtpi_3/s3/3.0 ;
+    /* K[0] = -r[0]*E*m_1_sqrtpi_3/s3/3.0 ; */
+    /* K[1] = -r[1]*E*m_1_sqrtpi_3/s3/3.0 ; */
+    /* K[2] = -r[2]*E*m_1_sqrtpi_3/s3/3.0 ; */
+    K[0] = -m_1_sqrtpi_3/s3/3.0 ;
+    K[1] = -m_1_sqrtpi_3/s3/3.0 ;
+    K[2] = -m_1_sqrtpi_3/s3/3.0 ;
 
     if ( dK != NULL ) {
       memset(dK, 0, 9*sizeof(RVPM_REAL)) ;
