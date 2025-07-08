@@ -119,5 +119,8 @@
 gint rvpm_elliptic_KE(gdouble k, gdouble *K, gdouble *E) ;
 gint rvpm_elliptic_KE_f(gfloat k, gfloat *K, gfloat *E) ;
 
+gint rvpm_gaussian_gfunc(gdouble x, gdouble *g, gdouble *dg) ;
+gint rvpm_gaussian_gfunc_f(gfloat x, gfloat *g, gfloat *dg) ;
+
 #endif /*__RVPM_PRIVATE_H_INCLUDED__*/
 

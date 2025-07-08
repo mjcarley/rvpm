@@ -199,9 +199,12 @@ gint RVPM_FUNCTION_NAME(rvpm_tree_update)(rvpm_tree_t *t, gint nthreads,
 					     rvpm_distribution_particle(d,0), pstr,
 					     rvpm_distribution_particle_number(d)) ;
 
-  RVPM_FUNCTION_NAME(wbfmm_tree_add_points)(t->t, (gpointer)(rvpm_distribution_particle(d,0)),
-			pstr, NULL, 0,
-			rvpm_distribution_particle_number(d), FALSE) ;
+  RVPM_FUNCTION_NAME(wbfmm_tree_add_points)(t->t,
+					    (gpointer)
+					    (rvpm_distribution_particle(d,0)),
+					    pstr, NULL, 0,
+					    rvpm_distribution_particle_number(d),
+					    FALSE) ;
   /* check_indices(t->t) ; */
   
   t->t->depth = 0 ;
@@ -441,7 +444,8 @@ static void box_curl_correct_GS(wbfmm_tree_t *t,gint i0, gint i1,
     xs = wbfmm_tree_point_index(t, idx) ;
     s = sig[idx*sigstr] ;
     kernel_bare(x, xs, K0) ;
-    RVPM_FUNCTION_NAME(rvpm_kernel_GS)(x, xs, s, K, NULL) ;
+    /* RVPM_FUNCTION_NAME(rvpm_kernel_GS)(x, xs, s, K, NULL) ; */
+    RVPM_FUNCTION_NAME(rvpm_kernel_fast_GS)(x, xs, s, K, NULL) ;
     correct_kernel(K, K0) ;
     rvpm_vector_cross(u,K,&(src[idx*sstr])) ;
     f[0] += u[0] ; f[1] += u[1] ; f[2] += u[2] ; 
@@ -579,7 +583,8 @@ static void box_curl_gradient_correct_GS(wbfmm_tree_t *t,gint i0, gint i1,
     w = &(src[idx*sstr]) ;
     s = sig[idx*sigstr] ;
     kernel_gradient_bare(x, xs, K0, &(K0[3])) ;
-    RVPM_FUNCTION_NAME(rvpm_kernel_GS)(x, xs, s, K, &(K[3])) ;
+    /* RVPM_FUNCTION_NAME(rvpm_kernel_GS)(x, xs, s, K, &(K[3])) ; */
+    RVPM_FUNCTION_NAME(rvpm_kernel_fast_GS)(x, xs, s, K, &(K[3])) ;
     correct_gradient_kernel(K, K0, &(K[3]), &(K0[3])) ;
     /* kernel_correction_GS(x, xs, s, K, &(K[3])) ; */
     rvpm_vector_cross(u,K,w) ;

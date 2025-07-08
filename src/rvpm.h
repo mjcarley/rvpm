@@ -151,7 +151,11 @@ gint rvpm_kernel_MR(gdouble *x, gdouble *y, gdouble e,
 gint rvpm_kernel_MR_f(gfloat *x, gfloat *y, gfloat e, gfloat *K, gfloat *dK) ;
 gint rvpm_kernel_GS(gdouble *x, gdouble *y, gdouble s,
 		    gdouble *K, gdouble *dK) ;
+gint rvpm_kernel_fast_GS(gdouble *x, gdouble *y, gdouble s,
+			 gdouble *K, gdouble *dK) ;
 gint rvpm_kernel_GS_f(gfloat *x, gfloat *y, gfloat s, gfloat *K, gfloat *dK) ;
+gint rvpm_kernel_fast_GS_f(gfloat *x, gfloat *y, gfloat s,
+			   gfloat *K, gfloat *dK) ;
 
 gint rvpm_vorticity_velocity_gradient(rvpm_distribution_t *v, gdouble e,
 				      rvpm_kernel_t kernel,

@@ -40,7 +40,9 @@ char *progname ;
     "kernel_gradient",
     "stream_function",
     "stream_function_velocity",
-    "time_step", NULL} ;
+    "time_step",
+    "gauss_kernel",
+    NULL} ;
 
 static FILE *file_open(char *file, char *mode,
 		       char *file_default, FILE *fdefault)
@@ -938,6 +940,45 @@ static void solver_step_test(void)
   return ;
 }
 
+static void gauss_fast_kernel_test(void)
+
+{
+  RVPM_REAL g, f, x[3], y[3], err, errd, Kr[12], Kf[12], R, s ;
+  gint i ;
+  
+  fprintf(stderr, "interpolated Gaussian smoothing kernel test\n") ;
+  fprintf(stderr, "===========================================\n") ;
+
+  y[0] = 0.1 ; y[1] = 0.7 ; y[2] = -0.4 ;
+
+  s = 0.079 ;
+  
+  err = errd = 0.0 ;
+  for ( R = 0 ; R < 7.5*s ; R += 0.01*s ) {
+    x[0] = y[0]+R/sqrt(3) ; x[1] = y[1]+R/sqrt(3) ; x[2] = y[2]-R/sqrt(3) ;
+
+    rvpm_kernel_GS_FLOAT(x, y, s, Kr, &(Kr[3])) ;
+    rvpm_kernel_fast_GS_FLOAT(x, y, s, Kf, &(Kf[3])) ;
+
+    fprintf(stdout, "%1.16e", R) ;
+    for ( i = 0 ; i < 12 ; i ++ ) {
+      fprintf(stdout, " %1.16e", Kf[i]) ;
+    }
+    fprintf(stdout, "\n") ;
+    err = MAX(err, ABS(Kf[0]-Kr[0])) ;
+    err = MAX(err, ABS(Kf[1]-Kr[1])) ;
+    err = MAX(err, ABS(Kf[2]-Kr[2])) ;
+    for ( i = 0 ; i < 9 ; i ++ ) {
+      errd = MAX(errd, ABS(Kr[3+i]-Kf[3+i])) ;
+    }      
+  }
+
+  fprintf(stderr, "maximum error: %lg\n", err) ;
+  fprintf(stderr, "maximum error: %lg\n", errd) ;
+  
+  return ;
+}
+
 gint main(gint argc, char **argv)
 
 {
@@ -1018,5 +1059,11 @@ gint main(gint argc, char **argv)
     return 0 ;
   }
 
+  if ( test == 8 ) {
+    gauss_fast_kernel_test() ;
+
+    return 0 ;
+  }
+  
   return 0 ;
 }

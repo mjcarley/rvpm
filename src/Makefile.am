@@ -13,7 +13,8 @@ librvpm_la_SOURCES = \
 	solver.c \
 	streamfunc.c \
 	specfunc.c \
-	common.c
+	common.c \
+	gkernel.c
 
 include_HEADERS = \
 	rvpm.h
@@ -27,7 +28,8 @@ libsub_la_SOURCES = \
 	tree.c \
 	solver.c \
 	specfunc.c \
-	streamfunc.c
+	streamfunc.c \
+	gkernel.c
 
 libsub_la_CPPFLAGS = -DRVPM_SINGLE_PRECISION
 

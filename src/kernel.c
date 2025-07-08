@@ -223,7 +223,7 @@ static void kernel_GS(RVPM_REAL *x, RVPM_REAL *y,
  * \f$K(\mathbf{x},\mathbf{y}) = \left(K_{x}, K_{y}, K_{z}\right) =
  * -\frac{g(R/\sigma)}{4\pi}
  * \frac{\mathbf{x}-\mathbf{y}}{|\mathbf{x}-\mathbf{y}|)^{3/2}}\f$ with 
- * \f$G(R/\sigma=\mathrm{erf}(R/\sigma) - 
+ * \f$g(R/\sigma)=\mathrm{erf}(R/\sigma) - 
  * 2/\sqrt{pi}(R/\sigma)\exp[-R^{2}/\sigma^{2}]\f$
  * 
  * and its gradient
@@ -338,6 +338,119 @@ gint RVPM_FUNCTION_NAME(rvpm_kernel_GS)(RVPM_REAL *x, RVPM_REAL *y,
   dg[1] = 2.0*M_2_SQRTPI*R*E*r[1]/s3 ;
   dg[2] = 2.0*M_2_SQRTPI*R*E*r[2]/s3 ;
 
+  for ( i = 0 ; i < 3 ; i ++ ) {
+    for ( j = 0 ; j < 3 ; j ++ ) {
+      dK[3*i+j] = g*dk[3*i+j] + k[j]*dg[i] ;
+    }
+  }
+  
+  return 0 ;
+}
+
+/** 
+ * Evaluate Gaussian smoothed kernel using Chebyshev interpolated
+ * fit to kernel, to machine precision
+ * 
+ * \f$K(\mathbf{x},\mathbf{y}) = \left(K_{x}, K_{y}, K_{z}\right) =
+ * -\frac{g(R/\sigma)}{4\pi}
+ * \frac{\mathbf{x}-\mathbf{y}}{|\mathbf{x}-\mathbf{y}|)^{3/2}}\f$ with 
+ * \f$g(R/\sigma)=\mathrm{erf}(R/\sigma) - 
+ * 2/\sqrt{pi}(R/\sigma)\exp[-R^{2}/\sigma^{2}]\f$
+ * 
+ * and its gradient
+ * 
+ * \f$\left(
+ * \frac{\partial K_{x}}{\partial x}, 
+ * \frac{\partial K_{y}}{\partial x}, 
+ * \frac{\partial K_{z}}{\partial x}, 
+ * \frac{\partial K_{x}}{\partial y}, 
+ * \frac{\partial K_{y}}{\partial y}, 
+ * \frac{\partial K_{z}}{\partial y}, 
+ * \frac{\partial K_{x}}{\partial z}, 
+ * \frac{\partial K_{y}}{\partial z}, 
+ * \frac{\partial K_{z}}{\partial z}
+ * \right)\f$
+ * 
+ * @param x field point;
+ * @param y source point;
+ * @param s Gaussian parameter \f$\sigma\f$;
+ * @param K on exit, contains value of kernel;
+ * @param dK if not NULL, on exit, contains gradient of kernel.
+ * 
+ * @return 0 on success.
+ */
+
+gint RVPM_FUNCTION_NAME(rvpm_kernel_fast_GS)(RVPM_REAL *x, RVPM_REAL *y,
+					     RVPM_REAL s,
+					     RVPM_REAL *K, RVPM_REAL *dK)
+
+{
+  RVPM_REAL R, R2, R3, R5, r[3], k[3], dk[9], dg[3], g, gd, E ;
+  RVPM_REAL s3 ;
+  const RVPM_REAL m_1_sqrtpi_3 = 0.5*M_1_PI*M_2_SQRTPI ;
+  const RVPM_REAL m_1_4pi = 0.25*M_1_PI ;
+  gint i, j ;
+
+  K[0] = K[1] = K[2] = 0.0 ;
+  
+  rvpm_vector_diff(r,x,y) ;
+  R2 = rvpm_vector_scalar(r,r) ;
+
+  s3 = s*s*s ;
+  if ( R2 < 1e-12 ) {
+    /*use series expansion at small R*/
+    E = EXP(-R2/s/s) ;
+    K[0] = -r[0]*E*m_1_sqrtpi_3/s3/3.0 ;
+    K[1] = -r[1]*E*m_1_sqrtpi_3/s3/3.0 ;
+    K[2] = -r[2]*E*m_1_sqrtpi_3/s3/3.0 ;
+
+    if ( dK != NULL ) {
+      memset(dK, 0, 9*sizeof(RVPM_REAL)) ;
+      dK[0] = -m_1_sqrtpi_3/3.0/s3 + 2.0*E/3.0*m_1_sqrtpi_3/s3/s/s*r[0]*r[0] ;
+      dK[4] = -m_1_sqrtpi_3/3.0/s3 + 2.0*E/3.0*m_1_sqrtpi_3/s3/s/s*r[1]*r[1] ;
+      dK[8] = -m_1_sqrtpi_3/3.0/s3 + 2.0*E/3.0*m_1_sqrtpi_3/s3/s/s*r[2]*r[2] ;
+    }
+
+    return 0 ;
+  }
+  
+  R  = SQRT(R2) ;
+  R3 = R*R2 ;
+
+  k[0] = -r[0]/R3*m_1_4pi ;
+  k[1] = -r[1]/R3*m_1_4pi ;
+  k[2] = -r[2]/R3*m_1_4pi ;
+
+  RVPM_FUNCTION_NAME(rvpm_gaussian_gfunc)(R/s, &g, &gd) ;
+  
+  K[0] = g*k[0] ;
+  K[1] = g*k[1] ;
+  K[2] = g*k[2] ;
+  
+  if ( dK == NULL ) return 0 ;
+  
+  R5 = R3*R2 ;
+  
+  /*dK/dx*/
+  dk[0] = -m_1_4pi*(-3.0*r[0]*r[0]/R5 + 1.0/R3) ;
+  dk[1] = -m_1_4pi*(-3.0*r[1]*r[0]/R5) ;
+  dk[2] = -m_1_4pi*(-3.0*r[2]*r[0]/R5) ;
+  /*dk/dy*/
+  /* dk[3] = -3.0*r[0]*r[1]/R5 ; */
+  dk[3] = dk[1] ;
+  dk[4] = -m_1_4pi*(-3.0*r[1]*r[1]/R5 + 1.0/R3) ;
+  dk[5] = -m_1_4pi*(-3.0*r[2]*r[1]/R5) ;
+  /*dk/dz*/
+  /* dk[6] = -3.0*r[0]*r[2]/R5 ; */
+  dk[6] = dk[2] ;
+  /* dk[7] = -3.0*r[1]*r[2]/R5 ; */
+  dk[7] = dk[5] ;
+  dk[8] = -m_1_4pi*(-3.0*r[2]*r[2]/R5 + 1.0/R3) ;
+
+  dg[0] = gd*r[0]/R/s ;
+  dg[1] = gd*r[1]/R/s ;
+  dg[2] = gd*r[2]/R/s ;
+  
   for ( i = 0 ; i < 3 ; i ++ ) {
     for ( j = 0 ; j < 3 ; j ++ ) {
       dK[3*i+j] = g*dk[3*i+j] + k[j]*dg[i] ;
